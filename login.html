@@ -1,0 +1,67 @@
+<html>
+<head>
+    <title>Car Rental System - Login</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Login Page</h1>
+    <form method="post" onsubmit="return loginCheck()">
+        <fieldset>
+            Username:
+            <input type="text" id="loginUsername" onblur="checkLoginUsername()" />
+            <span id="loginUError" class="error-msg"></span>
+            <br><br>
+            Password:
+            <input type="password" id="loginPassword" onblur="checkLoginPassword()" />
+            <span id="loginPError" class="error-msg"></span>
+            <br><br>
+            <input type="submit" value="Login" />
+            <br>
+            <span id="loginSuccess" class="dashboard-number"></span>
+        </fieldset>
+        <p>
+            <a href="signup.html">Sign up</a> | 
+            <a href="forgot.html">Forgot Password?</a>
+        </p>
+    </form>
+    <script>
+        function checkLoginUsername() {
+            let username = document.getElementById('loginUsername').value;
+            if (username == "") {
+                document.getElementById('loginUError').innerHTML = "Please type username!";
+            } else {
+                document.getElementById('loginUError').innerHTML = "";
+            }
+        }
+        function checkLoginPassword() {
+            let password = document.getElementById('loginPassword').value;
+            if (password == "") {
+                document.getElementById('loginPError').innerHTML = "Please type password!";
+            } else {
+                document.getElementById('loginPError').innerHTML = "";
+            }
+        }
+        function loginCheck() {
+            let username = document.getElementById('loginUsername').value;
+            let password = document.getElementById('loginPassword').value;
+
+            if (username === "" || password === "") {
+                checkLoginUsername();
+                checkLoginPassword();
+                return false;
+            }
+            if (username === "admin" && password === "admin") {
+                window.location.href = "admin_dashboard.html";
+                return false;
+            }
+            if (username === password) {
+                window.location.href = "user_dashboard.html";
+                return false;
+            } else {
+                document.getElementById('loginSuccess').innerHTML = "Invalid username or password!";
+                return false;
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<html>
+<head>
+    <title>Car Rental System - Signup</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Signup Page</h1>
+    <form method="post" action="login.html" onsubmit="return signupCheck()">
+        <fieldset>
+            Username:
+            <input type="text" id="signupUsername" onblur="checkSignupUsername()" />
+            <p id="signupUError" class="error-msg"></p>
+            Email:
+            <input type="text" id="signupEmail" onblur="checkSignupEmail()" />
+            <p id="signupEError" class="error-msg"></p>
+            Password:
+            <input type="password" id="signupPassword" onblur="checkSignupPassword()" />
+            <p id="signupPError" class="error-msg"></p>
+            <input type="submit" value="Sign Up" />
+            <p id="signupSuccess"></p>
+        </fieldset>
+        <p><a href="login.html">Login</a></p>
+    </form>
+    <script>
+        function checkSignupUsername() {
+            let username = document.getElementById('signupUsername').value;
+            if (username == "") {
+                document.getElementById('signupUError').innerHTML = "Please type username!";
+            } else {
+                document.getElementById('signupUError').innerHTML = "";
+            }
+        }
+        function checkSignupEmail() {
+            let email = document.getElementById('signupEmail').value;
+            if (email == "" || !email.includes("@")) {
+                document.getElementById('signupEError').innerHTML = "Please enter a valid email!";
+            } else {
+                document.getElementById('signupEError').innerHTML = "";
+            }
+        }
+        function checkSignupPassword() {
+            let password = document.getElementById('signupPassword').value;
+            if (password.length < 4) {
+                document.getElementById('signupPError').innerHTML = "Password must be at least 4 characters!";
+            } else {
+                document.getElementById('signupPError').innerHTML = "";
+            }
+        }
+        function signupCheck() {
+            checkSignupUsername();
+            checkSignupEmail();
+            checkSignupPassword();
+            if (
+                document.getElementById('signupUError').innerHTML === "" &&
+                document.getElementById('signupEError').innerHTML === "" &&
+                document.getElementById('signupPError').innerHTML === ""
+            ) {
+                alert("Signup successful! Please login.");
+                return true;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

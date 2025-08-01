@@ -1,0 +1,41 @@
+<html>
+<head>
+    <title>Role Assignment</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Assign Roles</h1>
+    <form method="post" action="role_assignment.html" onsubmit="return assignRoleCheck()">
+        <fieldset>
+            Username:
+            <input type="text" id="username" placeholder="Enter username">
+            <p id="userError" class="error-msg"></p>
+            Select Role:
+            <select id="role">
+                <option value="User">User</option>
+                <option value="Editor">Editor</option>
+                <option value="Admin">Admin</option>
+            </select>
+            <br><br>
+            <input type="submit" value="Assign Role">
+            
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='admin_dashboard.html'" />
+            <p id="assignSuccess"></p>
+        </fieldset>
+    </form>
+    <script>
+        function assignRoleCheck() {
+            let username = document.getElementById('username').value;
+            if (username == "") {
+                document.getElementById('userError').innerHTML = "Please enter username!";
+                return false;
+            }
+            document.getElementById('userError').innerHTML = "";
+            let role = document.getElementById('role').value;
+            document.getElementById('assignSuccess').innerHTML = 
+                "Assigned role :" + role;
+            return false;
+        }
+    </script>
+</body>
+</html>

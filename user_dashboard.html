@@ -1,0 +1,32 @@
+<html>
+<head>
+    <title>User Dashboard</title>
+    <link rel="stylesheet" type="text/css" href="dashboard.css">
+</head>
+<body>
+    <h1>User Dashboard</h1>
+    <form class="dashboard-form">
+        <fieldset>
+            <legend>Summary</legend>
+            <label>My Bookings:</label>
+            <span class="dashboard-number">2</span><br><br>
+            <label>Upcoming Pickups:</label>
+            <span class="dashboard-number">1</span><br><br>
+            <label>Loyalty Points:</label>
+            <span class="dashboard-number">120</span><br><br>
+            <label>Unread Notifications:</label>
+            <span class="dashboard-number">3</span><br><br>
+        </fieldset>
+    </form>
+    <form class="dashboard-form">
+        <fieldset>
+            <legend>Quick Actions</legend>
+            <input type="button" value="My Profile" onclick="window.location.href='profile.html'" />
+            <input type="button" value="Logout" onclick="window.location.href='login.html'" />
+            <input type="button" value="Notifications" onclick="window.location.href='notification.html'" />
+            <input type="button" value="Contact Us" onclick="window.location.href='contact.html'" />
+
+        </fieldset>
+    </form>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<html>
+<head>
+    <title>Edit Profile</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    <form method="post" action="profile.html" enctype="multipart/form-data" onsubmit="return editProfileCheck()">
+        <fieldset>
+            Name:
+            <input type="text" id="editName" value="Apurbo Biswas" onblur="checkEditName()">
+            <p id="nameError"></p>
+            Email:
+            <input type="text" id="editEmail" value="apurbobiswas32@gmail.com" onblur="checkEditEmail()">
+            <p id="emailError"></p>
+            Profile Picture:
+            <input type="file" id="editAvatar" accept="image/*">
+            <p id="avatarError"></p>
+            <input type="submit" value="Save Changes">
+            <p id="saveSuccess"></p>
+        </fieldset>
+    </form>
+    <script>
+        function checkEditName() {
+            let name = document.getElementById('editName').value;
+            if (name == "") {
+                document.getElementById('nameError').innerHTML = "Please enter name!";
+            } else {
+                document.getElementById('nameError').innerHTML = "";
+            }
+        }
+        function checkEditEmail() {
+            let email = document.getElementById('editEmail').value;
+            if (email == "" || !email.includes("@")) {
+                document.getElementById('emailError').innerHTML = "Please enter valid email!";
+            } else {
+                document.getElementById('emailError').innerHTML = "";
+            }
+        }
+        function editProfileCheck() {
+            checkEditName();
+            checkEditEmail();
+            if (
+                document.getElementById('nameError').innerHTML === "" &&
+                document.getElementById('emailError').innerHTML === ""
+            ) {
+                alert("Profile updated!");
+                return true;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>
