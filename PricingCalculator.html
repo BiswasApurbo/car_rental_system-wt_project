@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Pricing Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f8ff;
+            margin: 0;
+        }
+        h1 {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 15px;
+            margin: 0;
+            color: #003366;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+            position: fixed;
+            width: 100%;
+            top: 0;
+        }
+        .container {
+            margin-top: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: calc(100vh - 100px);
+        }
+        form {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            width: 300px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        input[type="submit"] {
+            background-color: #007acc;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #005f99;
+        }
+        .note, .message {
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        .message {
+            font-weight: bold;
+        }
+        .green { color: green; }
+        .red { color: red; }
+        h3 {
+            margin-top: 15px;
+            color: #004080;
+        }
+        span {
+            font-weight: bold;
+            color: #003366;
+        }
+    </style>
+</head>
+<body>
+
+<h1> Car Rental Pricing Calculator</h1>
+
+<div class="container">
+    <form onsubmit="return calculateQuote()">
+        Rental Days:
+        <input type="number" id="days" oninput="updatePrice()" />
+
+        Promo Code:
+        <input type="text" id="promo" oninput="applyPromo()" />
+        <div class="note">
+            Use <b>1234</b> for <b>50%</b> off<br>
+            Use <b>5678</b> for <b>30%</b> off
+        </div>
+        <p id="promoMessage" class="message"></p>
+
+        <h3>Fee Breakdown:</h3>
+        <p>Base Fee (TK500/day): <span id="base">TK0</span></p>
+        <p>Tax (10%): <span id="tax">TK0</span></p>
+        <p>Discount: <span id="discount">TK0</span></p>
+        <p><strong>Total: <span id="total">TK0</span></strong></p>
+
+        <input type="submit" value="Get Quote" />
+    </form>
+</div>
+
+<script>
+    let baseRate = 500;
+    let discountPercent = 0;
+
+    function applyPromo() {
+        const code = document.getElementById("promo").value.trim();
+        const msg = document.getElementById("promoMessage");
+
+        if (code === "1234") {
+            discountPercent = 50;
+            msg.textContent = "50% off applied!";
+            msg.className = "message green";
+        } else if (code === "5678") {
+            discountPercent = 30;
+            msg.textContent = "30% off applied!";
+            msg.className = "message green";
+        } else if (code === "") {
+            discountPercent = 0;
+            msg.textContent = "";
+            msg.className = "message";
+        } else {
+            discountPercent = 0;
+            msg.textContent = "Invalid promo code!";
+            msg.className = "message red";
+        }
+
+        updatePrice();
+    }
+
+    function updatePrice() {
+        const days = parseInt(document.getElementById("days").value);
+        if (isNaN(days) || days <= 0) {
+            setPrices(0, 0, 0, 0);
+            return;
+        }
+
+        const baseFee = baseRate * days;
+        const discount = (discountPercent / 100) * baseFee;
+        const tax = 0.1 * baseFee;
+        const total = baseFee + tax - discount;
+
+        setPrices(baseFee, tax, discount, total);
+    }
+
+    function setPrices(base, tax, discount, total) {
+        document.getElementById("base").textContent = "TK" + base.toFixed(2);
+        document.getElementById("tax").textContent = "TK" + tax.toFixed(2);
+        document.getElementById("discount").textContent = "TK" + discount.toFixed(2);
+        document.getElementById("total").textContent = "TK" + total.toFixed(2);
+    }
+
+    function calculateQuote() {
+        const days = parseInt(document.getElementById("days").value);
+        if (isNaN(days) || days <= 0) {
+            alert("Please enter valid rental days.");
+            return false;
+        }
+        alert("Quote generated successfully!");
+        //return false; // Prevent form submission (no 404)
+    }
+</script>
+
+</body>
+</html>

@@ -1,0 +1,159 @@
+<html>
+<head>
+<title>Pickup Locations</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #dbe9f4;
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  form {
+    background: #f0f8ff;
+    border: 2px solid #4a90e2;
+    padding: 25px 30px;
+    border-radius: 10px;
+    box-shadow: 0 0 15px rgba(74,144,226,0.3);
+    width: 320px;
+  }
+  h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 20px;
+  }
+  input[type="text"] {
+    width: 95%;
+    padding: 8px;
+    margin-top: 5px;
+    border: 1px solid #4a90e2;
+    border-radius: 4px;
+  }
+  .examples {
+    font-size: 12px;
+    color: #555;
+    margin-top: 4px;
+    margin-bottom: 10px;
+    font-style: italic;
+  }
+  input[type="checkbox"] {
+    margin-right: 8px;
+  }
+  input[type="submit"] {
+    background-color: #4a90e2;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: 100%;
+    font-size: 16px;
+  }
+  input[type="submit"]:hover {
+    background-color: #357ABD;
+  }
+  p {
+    margin: 0;
+    font-size: 14px;
+  }
+  #branchHours {
+    margin-top: 8px;
+    padding: 10px;
+    background: #d0e6fa;
+    border-radius: 6px;
+    border: 1px solid #4a90e2;
+    color: #2c3e50;
+    display: none;
+  }
+</style>
+</head>
+<body>
+  <form method="post" action="#" onsubmit="return formCheck()">
+    <h1>Pickup Locations</h1>
+    <fieldset style="border:none; padding:0;">
+      Airport / City: <br>
+      <input type="text" id="location" oninput="checkLocationAndShowHours()" />
+      <div class="examples">Examples: Hazrat Shahjalal International Airport, JFK, Dubai, Dhaka, Sylhet, Chittagong, Rangpur, New York</div>
+      <p id="locError"></p>
+
+      <!-- After-Hours Procedures shown here -->
+      <div id="branchHours"></div>
+
+      <br>
+      Available Services:<br>
+      <label><input type="checkbox" id="service1" /> Car Wash</label><br>
+      <label><input type="checkbox" id="service2" /> Fuel Station</label><br>
+      <label><input type="checkbox" id="service3" /> Wi-Fi</label><br>
+      <label><input type="checkbox" id="service4" /> None</label>
+      
+      <br><br>
+      <input type="submit" value="Submit" />
+      <p id="formSuccess"></p>
+    </fieldset>
+  </form>
+
+  <script>
+    function checkLocationAndShowHours() {
+      let loc = document.getElementById('location').value.trim();
+      const branchHoursDiv = document.getElementById('branchHours');
+
+      if (loc === "") {
+        document.getElementById('locError').innerHTML = "Please enter airport or city!";
+        document.getElementById('locError').style.color = 'red';
+        branchHoursDiv.style.display = "none";
+        branchHoursDiv.innerHTML = "";
+        return;
+      } else {
+        document.getElementById('locError').innerHTML = "";
+      }
+
+      let hours = "";
+      const locLower = loc.toLowerCase();
+
+      if (locLower.includes("hazrat shahjalal") || locLower.includes("dhaka")) {
+        hours = "After-Hours Procedures: Mon-Sun: 7:00 AM - 10:00 PM";
+      } else if (locLower.includes("jfk")) {
+        hours = "After-Hours Procedures: Mon-Sun: 6:00 AM - 11:00 PM";
+      } else if (locLower.includes("dubai")) {
+        hours = "After-Hours Procedures: Mon-Fri: 7:00 AM - 10:00 PM, Sat-Sun: 8:00 AM - 9:00 PM";
+      } else if (locLower.includes("new york")) {
+        hours = "After-Hours Procedures: Mon-Sat: 9:00 AM - 7:00 PM, Sun: Closed";
+      } else if (locLower.includes("sylhet")) {
+        hours = "After-Hours Procedures: Mon-Fri: 9:00 AM - 8:00 PM, Sat: 10:00 AM - 6:00 PM";
+      } else if (locLower.includes("chittagong")) {
+        hours = "After-Hours Procedures: Mon-Sun: 8:00 AM - 9:00 PM";
+      } else if (locLower.includes("rangpur")) {
+        hours = "After-Hours Procedures: Mon-Fri: 9:00 AM - 5:00 PM";
+      } else {
+        hours = "After-Hours Procedures: Mon-Fri: 8:00 AM - 8:00 PM, Sat: 9:00 AM - 5:00 PM, Sun: Closed";
+      }
+
+      branchHoursDiv.innerHTML = hours;
+      branchHoursDiv.style.display = "block";
+    }
+
+    function formCheck() {
+      let loc = document.getElementById('location').value.trim();
+      let service1 = document.getElementById('service1').checked;
+      let service2 = document.getElementById('service2').checked;
+      let service3 = document.getElementById('service3').checked;
+      let service4 = document.getElementById('service4').checked;
+
+      if (loc === "") {
+        checkLocationAndShowHours();
+        return false;
+      }
+
+      if (!service1 && !service2 && !service3 && !service4) {
+        alert("Please select at least one available service.");
+        return false;
+      }
+
+      alert("Form submitted successfully!");
+      //return false; // remove this line for actual form action
+    }
+  </script>
+</body>
+</html>
