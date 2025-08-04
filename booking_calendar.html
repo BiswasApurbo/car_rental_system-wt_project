@@ -1,0 +1,52 @@
+<html>
+<head>
+    <title>Booking Calendar</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Booking Calendar</h1>
+    <form>
+        <fieldset>
+            <legend>Date & Time Selection</legend>
+            <label for="pickup">Pickup Date:</label>
+            <input type="date" id="pickup">
+            <label for="return">Return Date:</label>
+            <input type="date" id="return">
+            <label for="time">Pickup Time:</label>
+            <input type="text" id="time" placeholder="e.g., 10:00 AM">
+            <input type="button" value="Check Rates" onclick="showRateCalendar()">
+        </fieldset>
+        <fieldset>
+            <legend>Booking Summary</legend>
+            <input type="button" value="Reserve Now" onclick="showBookingSummary()">
+            <input type="button" value="1-Click Confirm" onclick="confirmBooking()">
+        </fieldset>
+        <div id="bookingSummary">
+            <b>Booking Summary:</b>
+            <ul>
+                <li>Pickup: <span id="showPickup"></span></li>
+                <li>Return: <span id="showReturn"></span></li>
+                <li>Pickup Time: <span id="showTime"></span></li>
+                <li>Price: ৳3500 (Demo)</li>
+            </ul>
+        </div>
+        <fieldset>
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html'">
+        </fieldset>
+    </form>
+    <script>
+        function showRateCalendar() {
+            alert("Dynamic pricing: 15% higher on weekends. (Demo)");
+        }
+        function showBookingSummary() {
+            document.getElementById('bookingSummary').style.display = 'block';
+            document.getElementById('showPickup').innerText = document.getElementById('pickup').value;
+            document.getElementById('showReturn').innerText = document.getElementById('return').value;
+            document.getElementById('showTime').innerText = document.getElementById('time').value;
+        }
+        function confirmBooking() {
+            alert("Booking confirmed with 1-click! (Demo)");
+        }
+    </script>
+</body>
+</html>
