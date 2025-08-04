@@ -1,0 +1,36 @@
+<html>
+<head>
+    <title>Admin Panel</title>
+    <link rel="stylesheet" type="text/css" href="admin_common.css">
+</head>
+<body>
+    <h1>Admin Panel</h1>
+    <div class="admin-card">
+        <form>
+            <fieldset>
+                <label for="adminFilter">Filter by role:</label>
+                <select id="adminFilter">
+                    <option>All</option>
+                    <option>Admin</option>
+                    <option>Editor</option>
+                    <option>User</option>
+                </select>
+                <input type="button" value="Apply Filter">
+            </fieldset>
+            <fieldset>
+                <label>Bulk Actions:</label>
+                <input type="button" value="Bulk Delete">
+                <input type="button" value="Export CSV">
+            </fieldset>
+            <fieldset>
+                <label>Advanced Settings:</label>
+                <input type="button" value="System Settings">
+                <input type="button" value="Content Moderation">
+            </fieldset>
+            <fieldset>
+                <input type="button" value="Back to Dashboard" onclick="window.location.href='admin_dashboard.html'">
+            </fieldset>
+        </form>
+    </div>
+</body>
+</html>

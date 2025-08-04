@@ -1,0 +1,69 @@
+<html>
+<head>
+    <title>Vehicle Inventory</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Vehicle Inventory</h1>
+    <form>
+        <fieldset>
+            <legend>Filter Vehicles</legend>
+            <label for="type">Type:</label>
+            <select id="type">
+                <option>All</option>
+                <option>SUV</option>
+                <option>Sedan</option>
+                <option>Hatchback</option>
+                <option>Van</option>
+            </select>
+            <label for="feature">Feature:</label>
+            <select id="feature">
+                <option>All</option>
+                <option>AC</option>
+                <option>GPS</option>
+                <option>Child Seat</option>
+            </select>
+            <label for="price">Price:</label>
+            <select id="price">
+                <option>All</option>
+                <option>0-2000</option>
+                <option>2001-4000</option>
+                <option>4001-6000</option>
+            </select>
+            <input type="button" value="Apply Filter" onclick="showGallery()">
+        </fieldset>
+        <fieldset>
+            <legend>Fleet Gallery & Tours</legend>
+            <input type="button" value="View Gallery" onclick="showGallery()">
+            <input type="button" value="360° Tour" onclick="alert('Opening 360° tour...');">
+            <input type="button" value="Check Availability" onclick="showAvailability()">
+        </fieldset>
+        <div id="gallery">
+            <b>Fleet Gallery (Demo):</b><br>
+            <img src="https://via.placeholder.com/150?text=Car+1">
+            <img src="https://via.placeholder.com/150?text=Car+2">
+            <img src="https://via.placeholder.com/150?text=Car+3">
+        </div>
+        <div id="vehicleDetails">
+            <b>Available Now:</b>
+            <ul>
+                <li>SUV – Toyota Fortuner</li>
+                <li>Sedan – Honda Accord</li>
+            </ul>
+        </div>
+        <fieldset>
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html'">
+        </fieldset>
+    </form>
+    <script>
+        function showGallery() {
+            document.getElementById('gallery').style.display = 'block';
+            document.getElementById('vehicleDetails').style.display = 'none';
+        }
+        function showAvailability() {
+            document.getElementById('vehicleDetails').style.display = 'block';
+            document.getElementById('gallery').style.display = 'none';
+        }
+    </script>
+</body>
+</html>

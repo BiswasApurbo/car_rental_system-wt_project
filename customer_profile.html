@@ -1,0 +1,64 @@
+<html>
+<head>
+    <title>Vehicle Inventory</title>
+    <link rel="stylesheet" type="text/css" href="auth.css">
+</head>
+<body>
+    <h1>Vehicle Inventory</h1>
+    <form>
+        <fieldset>
+            <legend>Filter Vehicles</legend>
+            <label for="type">Type:</label>
+            <select id="type">
+                <option>All</option>
+                <option>SUV</option>
+                <option>Sedan</option>
+                <option>Hatchback</option>
+                <option>Van</option>
+            </select>
+            <label for="feature">Feature:</label>
+            <select id="feature">
+                <option>All</option>
+                <option>AC</option>
+                <option>Non-AC</option>
+                <option>GPS</option>
+                <option>Child Seat</option>
+            </select>
+            <label for="price">Price:</label>
+            <select id="price">
+                <option>All</option>
+                <option>0-2000</option>
+                <option>2001-4000</option>
+                <option>4001-6000</option>
+            </select>
+            <input type="button" value="Apply Filter" onclick="applyFilter()">
+        </fieldset>
+        <fieldset>
+            <legend>Fleet Gallery & Tours</legend>
+            <input type="button" value="View Gallery" onclick="showGallery()">
+            <input type="button" value="360° Tour" onclick="alert('Opening 360° tour');">
+            <input type="button" value="Check Availability" onclick="alert('Checking real-time availability');">
+        </fieldset>
+        <div id="gallery" style="display:none; text-align:center;">
+            <img src="https://via.placeholder.com/160x100?text=Car+1" alt="Car 1">
+            <img src="https://via.placeholder.com/160x100?text=Car+2" alt="Car 2">
+            <img src="https://via.placeholder.com/160x100?text=Car+3" alt="Car 3">
+        </div>
+        <fieldset>
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html';">
+        </fieldset>
+    </form>
+    <script>
+        function applyFilter() {
+            var type = document.getElementById('type').value;
+            var feature = document.getElementById('feature').value;
+            var price = document.getElementById('price').value;
+            document.getElementById('gallery').style.display = 'block';
+            alert('Filter applied!\nType: ' + type + '\nFeature: ' + feature + '\nPrice: ' + price);
+        }
+        function showGallery() {
+            document.getElementById('gallery').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

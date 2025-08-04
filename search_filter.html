@@ -1,0 +1,36 @@
+<html>
+<head>
+    <title>Search & Filter</title>
+    <link rel="stylesheet" type="text/css" href="admin_common.css">
+</head>
+<body>
+    <h1>Search & Filter</h1>
+    <form>
+        <fieldset>
+            <legend>Search & Filter</legend>
+            <label for="searchBox">Search:</label>
+            <input type="text" id="searchBox" placeholder="Type keyword...">
+            <label for="categoryFilter">Category:</label>
+            <select id="categoryFilter">
+                <option>All</option>
+                <option>Vehicles</option>
+                <option>Users</option>
+                <option>Bookings</option>
+            </select>
+            <label for="statusFilter">Status:</label>
+            <select id="statusFilter">
+                <option>All</option>
+                <option>Active</option>
+                <option>Inactive</option>
+                <option>Pending</option>
+            </select>
+            <input type="button" value="Apply">
+        </fieldset>
+    </form>
+    <form>
+        <fieldset>
+            <input type="button" value="Back to Admin Panel" onclick="window.location.href='admin_panel.html'">
+        </fieldset>
+    </form>
+</body>
+</html>
