@@ -5,11 +5,11 @@
 </head>
 <body>
     <h1>Forgot Password</h1>
-    <form method="post" action="reset.html" onsubmit="return forgotCheck()">
+    <form method="post" onsubmit="return forgotCheck()">
         <fieldset>
             Enter your email:
             <input type="text" id="forgotEmail" onblur="checkForgotEmail()" />
-            <p id="forgotEError"></p>
+            <p id="forgotEError" class="error-msg"></p>
             <input type="submit" value="Send Reset Link" />
             <p id="forgotSuccess"></p>
         </fieldset>
