@@ -1,63 +1,119 @@
+<!DOCTYPE html>
 <html>
 <head>
-    <title>Vehicle Inventory</title>
-    <link rel="stylesheet" type="text/css" href="auth.css">
+    <title>Customer Profiles</title>
+    <link rel="stylesheet" href="customer_profiles.css">
 </head>
 <body>
-    <h1>Vehicle Inventory</h1>
-    <form>
+    <h1>Customer Profiles</h1>
+
+    <form onsubmit="return false;">
         <fieldset>
-            <legend>Filter Vehicles</legend>
-            <label for="type">Type:</label>
-            <select id="type">
-                <option>All</option>
-                <option>SUV</option>
-                <option>Sedan</option>
-                <option>Hatchback</option>
-                <option>Van</option>
-            </select>
-            <label for="feature">Feature:</label>
-            <select id="feature">
-                <option>All</option>
-                <option>AC</option>
-                <option>Non-AC</option>
-                <option>GPS</option>
-                <option>Child Seat</option>
-            </select>
-            <label for="price">Price:</label>
-            <select id="price">
-                <option>All</option>
-                <option>0-2000</option>
-                <option>2001-4000</option>
-                <option>4001-6000</option>
-            </select>
-            <input type="button" value="Apply Filter" onclick="applyFilter()">
+            <legend>Driver License Scanner</legend>
+
+            <label for="license">Upload License:</label>
+            <input type="file" id="license" accept=".jpg,.png,.pdf"><br><br>
+
+            <input type="button" value="Scan & Autofill" onclick="scanLicense()"><br><br>
+
+            <label for="name">Full Name:</label>
+            <input type="text" id="name"><br>
+            <span class="error" id="nameError"></span><br>
+
+            <label for="licenseNo">License No:</label>
+            <input type="text" id="licenseNo"><br>
+            <span class="error" id="licenseError"></span><br>
         </fieldset>
+
         <fieldset>
-            <legend>Fleet Gallery & Tours</legend>
-            <input type="button" value="View Gallery" onclick="showGallery()">
-            <input type="button" value="360° Tour" onclick="alert('Opening 360° tour');">
-            <input type="button" value="Check Availability" onclick="alert('Checking real-time availability');">
+            <legend>Preference Center</legend>
+
+            <label for="seat">Seat Position:</label>
+            <select id="seat">
+                <option value="">--Select--</option>
+                <option>Front-Left</option>
+                <option>Front-Right</option>
+                <option>Back-Left</option>
+                <option>Back-Right</option>
+            </select><br>
+            <span class="error" id="seatError"></span><br>
+
+            <label for="mirror">Mirror Position:</label>
+            <select id="mirror">
+                <option value="">--Select--</option>
+                <option>Standard</option>
+                <option>Wide Angle</option>
+                <option>Blind Spot Adjusted</option>
+            </select><br>
+            <span class="error" id="mirrorError"></span><br><br>
+
+            <input type="button" value="Save Preferences" onclick="savePreferences()">
         </fieldset>
-        <div id="gallery" style="display:none; text-align:center;">
-            <img src="https://via.placeholder.com/160x100?text=Car+1" alt="Car 1">
-            <img src="https://via.placeholder.com/160x100?text=Car+2" alt="Car 2">
-            <img src="https://via.placeholder.com/160x100?text=Car+3" alt="Car 3">
-        </div>
+
+        <fieldset>
+            <legend>Rental History</legend>
+            <ul>
+                <li>Honda City - Jan 2024 (Receipt #12345)</li>
+                <li>Toyota Fortuner - May 2024 (Receipt #67890)</li>
+                <li>Hyundai H1 - July 2024 (Receipt #24680)</li>
+            </ul>
+        </fieldset>
+
         <fieldset>
             <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html';">
         </fieldset>
     </form>
+
     <script>
-        function applyFilter() {
-            var type = document.getElementById('type').value;
-            var feature = document.getElementById('feature').value;
-            var price = document.getElementById('price').value;
-            document.getElementById('gallery').style.display = 'block';
-            alert('Filter applied!\nType: ' + type + '\nFeature: ' + feature + '\nPrice: ' + price);
+        function scanLicense() {
+            const file = document.getElementById('license').files[0];
+            if (!file) {
+                alert("Please upload a license file.");
+                return;
+            }
+
+            document.getElementById('name').value = "John Doe";
+            document.getElementById('licenseNo').value = "DL-0987654321";
+            clearErrors();
+            alert("License scanned and details auto-filled.");
         }
-        function showGallery() {
-            document.getElementById('gallery').style.display = 'block';
+
+        function savePreferences() {
+            const name = document.getElementById('name').value.trim();
+            const licenseNo = document.getElementById('licenseNo').value.trim();
+            const seat = document.getElementById('seat').value;
+            const mirror = document.getElementById('mirror').value;
+
+            let isValid = true;
+            clearErrors();
+
+            if (name === "") {
+                document.getElementById('nameError').innerText = "Please fill up the name.";
+                isValid = false;
+            }
+            if (licenseNo === "") {
+                document.getElementById('licenseError').innerText = "Please enter license number.";
+                isValid = false;
+            }
+            if (seat === "") {
+                document.getElementById('seatError').innerText = "Please select seat preference.";
+                isValid = false;
+            }
+            if (mirror === "") {
+                document.getElementById('mirrorError').innerText = "Please select mirror preference.";
+                isValid = false;
+            }
+
+            if (isValid) {
+                alert("Preferences saved:\nName: " + name + "\nSeat: " + seat + "\nMirror: " + mirror);
+            }
+        }
+
+        function clearErrors() {
+            document.getElementById('nameError').innerText = "";
+            document.getElementById('licenseError').innerText = "";
+            document.getElementById('seatError').innerText = "";
+            document.getElementById('mirrorError').innerText = "";
         }
     </script>
 </body>
