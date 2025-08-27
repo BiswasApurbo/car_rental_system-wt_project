@@ -1,3 +1,17 @@
+<?php
+session_start();
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    if (isset($_COOKIE['status']) && $_COOKIE['status'] === '1') {
+        $_SESSION['status'] = true;
+        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
+            $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+    } else {
+        header('location: ../view/login.php?error=badrequest');
+        exit;
+    }
+}
+?>
 <html>
 <head>
     <title>User Dashboard</title>
@@ -21,10 +35,10 @@
     <form class="dashboard-form">
         <fieldset>
             <legend>Quick Actions</legend>
-            <input type="button" value="My Profile" onclick="window.location.href='profile.html'" />
-            <input type="button" value="Logout" onclick="window.location.href='login.html'" />
-            <input type="button" value="Notifications" onclick="window.location.href='notification.html'" />
+            <input type="button" value="My Profile" onclick="window.location.href='profile.php'" />
+            <input type="button" value="Notifications" onclick="window.location.href='notification.php'" />
             <input type="button" value="Contact Us" onclick="window.location.href='contact.html'" />
+            <input type="button" value="Logout" onclick="window.location.href='../controller/logout.php'" />
         </fieldset>
     </form>
 </body>

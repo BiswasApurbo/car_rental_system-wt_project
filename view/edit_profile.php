@@ -1,0 +1,70 @@
+<?php
+session_start();
+header('Cache-Control: no-store, no-cache, must-revalidate');
+header('Pragma: no-cache');
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    if (isset($_COOKIE['status']) && $_COOKIE['status'] === '1') {
+        $_SESSION['status'] = true;
+        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
+            $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+    } else {
+        header('location: ../view/login.php?error=badrequest');
+        exit;
+    }
+}
+?>
+<html>
+<head>
+    <title>Edit Profile</title>
+    <link rel="stylesheet" type="text/css" href="../asset/auth.css">
+</head>
+<body>
+    <h1>Edit Profile</h1>
+    <form method="post" action="profile.html" enctype="multipart/form-data" onsubmit="return editProfileCheck()">
+        <fieldset>
+            Name:
+            <input type="text" id="editName" value="Apurbo Biswas" onblur="checkEditName()">
+            <p id="nameError"></p>
+            Email:
+            <input type="text" id="editEmail" value="apurbobiswas32@gmail.com" onblur="checkEditEmail()">
+            <p id="emailError"></p>
+            Profile Picture:
+            <input type="file" id="editAvatar" accept="image/*">
+            <p id="avatarError"></p>
+            <input type="submit" value="Save Changes">
+            <p id="saveSuccess"></p>
+        </fieldset>
+    </form>
+    <script>
+        function checkEditName() {
+            let name = document.getElementById('editName').value;
+            if (name == "") {
+                document.getElementById('nameError').innerHTML = "Please enter name!";
+            } else {
+                document.getElementById('nameError').innerHTML = "";
+            }
+        }
+        function checkEditEmail() {
+            let email = document.getElementById('editEmail').value;
+            if (email == "" || !email.includes("@")) {
+                document.getElementById('emailError').innerHTML = "Please enter valid email!";
+            } else {
+                document.getElementById('emailError').innerHTML = "";
+            }
+        }
+        function editProfileCheck() {
+            checkEditName();
+            checkEditEmail();
+            if (
+                document.getElementById('nameError').innerHTML === "" &&
+                document.getElementById('emailError').innerHTML === ""
+            ) {
+                alert("Profile updated!");
+                return true;
+            }
+            return false;
+        }
+    </script>
+</body>
+</html>

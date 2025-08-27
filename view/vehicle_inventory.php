@@ -1,0 +1,110 @@
+<?php
+session_start();
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    if (isset($_COOKIE['status']) && $_COOKIE['status'] === '1') {
+        $_SESSION['status'] = true;
+        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
+            $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+    } else {
+        header('location: ../view/login.php?error=badrequest');
+        exit;
+    }
+}
+?>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Vehicle Inventory</title>
+    <link rel="stylesheet" href="../asset/auth.css">
+</head>
+<body>
+    <h1>Vehicle Inventory</h1>
+
+    <form onsubmit="return false;">
+        <fieldset>
+            <legend>Filter Vehicles</legend>
+
+            <label for="type">Type:</label>
+            <select id="type">
+                <option value="">--Select--</option>
+                <option value="SUV">SUV</option>
+                <option value="Sedan">Sedan</option>
+                <option value="Hatchback">Hatchback</option>
+                <option value="Van">Van</option>
+            </select><br><br>
+
+            <label for="feature">Feature:</label>
+            <select id="feature">
+                <option value="">--Select--</option>
+                <option value="AC">AC</option>
+                <option value="GPS">GPS</option>
+                <option value="Child Seat">Child Seat</option>
+            </select><br><br>
+
+            <label for="price">Price Range:</label>
+            <select id="price">
+                <option value="">--Select--</option>
+                <option value="0-2000">0-2000</option>
+                <option value="2001-4000">2001-4000</option>
+                <option value="4001-6000">4001-6000</option>
+            </select><br><br>
+
+            <input type="button" value="Apply Filter" onclick="applyFilter()">
+        </fieldset>
+
+        <fieldset>
+            <legend>Fleet Gallery & Tours</legend>
+            <input type="button" value="View Gallery" onclick="showGallery()">
+            <input type="button" value="360° Tour" onclick="alert('Opening 360° tour...')">
+            <input type="button" value="Check Availability" onclick="showAvailability()">
+        </fieldset>
+
+        <div id="gallery" style="display: none;">
+    <h3>Fleet Gallery</h3>
+    <img src="https://upload.wikimedia.org/wikipedia/commons/9/91/2021_Toyota_Fortuner_Legender_2.8_4WD_AT.jpg" alt="SUV" width="220">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/f/fb/2020_Honda_Accord.jpg" alt="Sedan" width="220">
+    <img src="https://upload.wikimedia.org/wikipedia/commons/0/02/Toyota_HiAce_Widebody_DX_Long_Van.JPG" alt="Van" width="220">
+</div>
+
+
+        <div id="vehicleDetails" style="display: none;">
+            <h3>Available Now</h3>
+            <ul>
+                <li>SUV - Toyota Fortuner</li>
+                <li>Sedan - Honda Accord</li>
+                <li>Van - Toyota HiAce</li>
+            </ul>
+        </div>
+
+        <br>
+        <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html'">
+    </form>
+
+    <script>
+        function applyFilter() {
+            var type = document.getElementById("type").value;
+            var feature = document.getElementById("feature").value;
+            var price = document.getElementById("price").value;
+
+            if (type === "" || feature === "" || price === "") {
+                alert("Please select Type, Feature, and Price to apply filter.");
+                return;
+            }
+
+            alert("Filter applied:\nType: " + type + "\nFeature: " + feature + "\nPrice: " + price);
+            showGallery();
+        }
+
+        function showGallery() {
+            document.getElementById("gallery").style.display = "block";
+            document.getElementById("vehicleDetails").style.display = "none";
+        }
+
+        function showAvailability() {
+            document.getElementById("vehicleDetails").style.display = "block";
+            document.getElementById("gallery").style.display = "none";
+        }
+    </script>
+</body>
+</html>

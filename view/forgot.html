@@ -13,8 +13,9 @@
             <input type="submit" value="Send Reset Link" />
             <p id="forgotSuccess"></p>
         </fieldset>
-        <p><a href="login.html">Back to Login</a></p>
+        <p><a href="login.php">Back to Login</a></p>
     </form>
+
     <script>
         function checkForgotEmail() {
             let email = document.getElementById('forgotEmail').value;
@@ -24,11 +25,13 @@
                 document.getElementById('forgotEError').innerHTML = "";
             }
         }
+
         function forgotCheck() {
             checkForgotEmail();
             if (document.getElementById('forgotEError').innerHTML === "") {
                 alert("Reset link sent to your email!");
-                return true;
+                window.location.href = "login.php";
+                return false;
             }
             return false;
         }
