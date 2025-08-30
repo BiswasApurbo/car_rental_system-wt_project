@@ -1,66 +1,94 @@
 <?php
-session_start();
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
-if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
-    if (isset($_COOKIE['status']) && $_COOKIE['status'] === '1') {
-        $_SESSION['status'] = true;
-        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
-            $_SESSION['username'] = $_COOKIE['remember_user'];
-        }
-    } else {
-        header('location: ../view/login.php?error=badrequest');
-        exit;
+// Initialize empty variables for saved data
+$name = $licenseNo = $seat = $mirror = "";
+$nameError = $licenseError = $seatError = $mirrorError = "";
+$successMessage = "";
+
+// PHP form submission handling
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    // Get the form data
+    $name = $_POST['name'] ?? '';
+    $licenseNo = $_POST['licenseNo'] ?? '';
+    $seat = $_POST['seat'] ?? '';
+    $mirror = $_POST['mirror'] ?? '';
+
+    // Validation
+    $isValid = true;
+    
+    if (empty($name)) {
+        $nameError = "Please fill up the name.";
+        $isValid = false;
+    }
+    if (empty($licenseNo)) {
+        $licenseError = "Please enter license number.";
+        $isValid = false;
+    }
+    if (empty($seat)) {
+        $seatError = "Please select seat preference.";
+        $isValid = false;
+    }
+    if (empty($mirror)) {
+        $mirrorError = "Please select mirror preference.";
+        $isValid = false;
+    }
+
+    // If valid, show the saved preferences message
+    if ($isValid) {
+        $successMessage = "Preferences saved successfully!";
     }
 }
 ?>
-<html>
+
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Profiles</title>
-    <link rel="stylesheet" href="../asset/customer_profiles.css">
+    <link rel="stylesheet" href="ad.css">
 </head>
 <body>
-    <h1>Customer Profiles</h1>
+    <h2>Customer Profiles</h2>
 
-    <form onsubmit="return false;">
+    <form method="POST" onsubmit="return false;">
         <fieldset>
             <legend>Driver License Scanner</legend>
 
             <label for="license">Upload License:</label>
-            <input type="file" id="license" accept=".jpg,.png,.pdf"><br><br>
+            <input type="file" id="license" name="license" accept=".jpg,.png,.pdf"><br><br>
 
             <input type="button" value="Scan & Autofill" onclick="scanLicense()"><br><br>
 
             <label for="name">Full Name:</label>
-            <input type="text" id="name"><br>
-            <span class="error" id="nameError"></span><br>
+            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>"><br>
+            <span class="error-message" id="nameError"><?php echo $nameError; ?></span><br>
 
             <label for="licenseNo">License No:</label>
-            <input type="text" id="licenseNo"><br>
-            <span class="error" id="licenseError"></span><br>
+            <input type="text" id="licenseNo" name="licenseNo" value="<?php echo htmlspecialchars($licenseNo); ?>"><br>
+            <span class="error-message" id="licenseError"><?php echo $licenseError; ?></span><br>
         </fieldset>
 
         <fieldset>
             <legend>Preference Center</legend>
 
             <label for="seat">Seat Position:</label>
-            <select id="seat">
+            <select id="seat" name="seat">
                 <option value="">--Select--</option>
-                <option>Front-Left</option>
-                <option>Front-Right</option>
-                <option>Back-Left</option>
-                <option>Back-Right</option>
+                <option value="Front-Left" <?php echo ($seat == 'Front-Left') ? 'selected' : ''; ?>>Front-Left</option>
+                <option value="Front-Right" <?php echo ($seat == 'Front-Right') ? 'selected' : ''; ?>>Front-Right</option>
+                <option value="Back-Left" <?php echo ($seat == 'Back-Left') ? 'selected' : ''; ?>>Back-Left</option>
+                <option value="Back-Right" <?php echo ($seat == 'Back-Right') ? 'selected' : ''; ?>>Back-Right</option>
             </select><br>
-            <span class="error" id="seatError"></span><br>
+            <span class="error-message" id="seatError"><?php echo $seatError; ?></span><br>
 
             <label for="mirror">Mirror Position:</label>
-            <select id="mirror">
+            <select id="mirror" name="mirror">
                 <option value="">--Select--</option>
-                <option>Standard</option>
-                <option>Wide Angle</option>
-                <option>Blind Spot Adjusted</option>
+                <option value="Standard" <?php echo ($mirror == 'Standard') ? 'selected' : ''; ?>>Standard</option>
+                <option value="Wide Angle" <?php echo ($mirror == 'Wide Angle') ? 'selected' : ''; ?>>Wide Angle</option>
+                <option value="Blind Spot Adjusted" <?php echo ($mirror == 'Blind Spot Adjusted') ? 'selected' : ''; ?>>Blind Spot Adjusted</option>
             </select><br>
-            <span class="error" id="mirrorError"></span><br><br>
+            <span class="error-message" id="mirrorError"><?php echo $mirrorError; ?></span><br><br>
 
             <input type="button" value="Save Preferences" onclick="savePreferences()">
         </fieldset>
@@ -79,18 +107,36 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
         </fieldset>
     </form>
 
+    <!-- Section to display saved preferences -->
+    <div id="savedPreferences" style="display:none;">
+        <h3>Saved Preferences:</h3>
+        <p id="savedName"></p>
+        <p id="savedSeat"></p>
+        <p id="savedMirror"></p>
+    </div>
+
     <script>
         function scanLicense() {
             const file = document.getElementById('license').files[0];
+            
+            // Clear any previous error messages
+            clearErrors();
+
             if (!file) {
-                alert("Please upload a license file.");
+                // If no file is uploaded, show error message under license input
+                document.getElementById('licenseError').innerText = "Please upload a license file.";
                 return;
             }
 
+            // Auto-fill data after the license file is uploaded (simulated here)
             document.getElementById('name').value = "John Doe";
             document.getElementById('licenseNo').value = "DL-0987654321";
-            clearErrors();
-            alert("License scanned and details auto-filled.");
+
+            // Optionally clear the file input or any other actions needed
+            document.getElementById('license').value = '';  // Clear the file input if needed
+
+            // Clear any previous error messages
+            document.getElementById('licenseError').innerText = ''; // Clear any error message
         }
 
         function savePreferences() {
@@ -120,7 +166,13 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
             }
 
             if (isValid) {
-                alert("Preferences saved:\nName: " + name + "\nSeat: " + seat + "\nMirror: " + mirror);
+                // No validation errors, proceed to display saved preferences
+                document.getElementById('savedName').innerText = "Full Name: " + name;
+                document.getElementById('savedSeat').innerText = "Seat Position: " + seat;
+                document.getElementById('savedMirror').innerText = "Mirror Position: " + mirror;
+
+                // Show the saved preferences section
+                document.getElementById('savedPreferences').style.display = 'block';
             }
         }
 
