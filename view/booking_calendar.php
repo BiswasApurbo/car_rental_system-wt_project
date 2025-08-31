@@ -31,8 +31,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Calendar</title>
-    <link rel="stylesheet" href="ad.css">
+    <title>Lets Book Your Trip</title>
+    <link rel="stylesheet" href="../asset/ad.css">
 </head>
 <body>
     <h2>Booking Calendar</h2>
@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
 
             <label for="time">Pickup Time:</label>
-            <input type="text" id="time" name="time" placeholder="10:00 AM" value="<?php echo isset($pickupTime) ? $pickupTime : ''; ?>"><br>
+            <input type="time" id="time" name="time" placeholder="10:00 AM" value="<?php echo isset($pickupTime) ? $pickupTime : ''; ?>"><br>
             <div id="timeError" class="error-message">
                 <?php echo isset($errors) && in_array('Pickup Time is required.', $errors) ? 'Pickup Time is required.' : ''; ?>
             </div>
@@ -78,7 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
 
         <fieldset>
-            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html'">
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'">
         </fieldset>
 
         <!-- Display confirmation message here -->

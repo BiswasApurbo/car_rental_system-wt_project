@@ -45,7 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Profiles</title>
-    <link rel="stylesheet" href="ad.css">
+    <link rel="stylesheet" href="../asset/ad.css">
 </head>
 <body>
     <h2>Customer Profiles</h2>
