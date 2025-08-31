@@ -58,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Vehicle Damage Report</title>
-    <link rel="stylesheet" href="DamageReportsdesign.css">
+    <link rel="stylesheet" href="../asset/DamageReportsdesign.css">
 </head>
 <body>
 <div class="form-wrapper">
