@@ -42,9 +42,9 @@ if (($_SESSION['role'] ?? '') !== 'admin') {
         <fieldset>
             <legend>Quick Actions</legend>
             <input type="button" value="Role Assignment" onclick="window.location.href='role_assignment.php'" />
-            <input type="button" value="Permission Settings" onclick="window.location.href='permission_settings.php'" />
-            <input type="button" value="Profile" onclick="window.location.href='profile.php'" />
-            <input type="button" value="Notifications" onclick="window.location.href='notification.php'" />
+            <input type="button" value="Export Data" onclick="window.location.href='export.php'" />
+            <input type="button" value="Vehicle Inventory" onclick="window.location.href='vehicle_inventory.php'" />
+            <input type="button" value="Panel" onclick="window.location.href='admin_panel.php'" />
             <input type="button" value="Logout" onclick="window.location.href='../controller/logout.php'" />
         </fieldset>
     </form>
