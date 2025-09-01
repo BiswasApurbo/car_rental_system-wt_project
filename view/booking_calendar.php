@@ -26,11 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<<<<<<< HEAD
     <title>Booking Calendar</title>
-=======
-    <title>Lets Book Your Trip</title>
->>>>>>> b81453adcf04999767cdf596d04fb18accb8bc94
     <link rel="stylesheet" href="../asset/ad.css">
 </head>
 <body>
@@ -64,6 +60,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <legend>Booking Summary</legend>
             <input type="button" value="Reserve Now" onclick="showBookingSummary()">
             <input type="button" value="1-Click Confirm" onclick="confirmBooking()">
+            <input type="button" value="Customer Profile" onclick="window.location.href='customer_profile.php'">
         </fieldset>
 
         <div id="bookingSummary" style="display: none;">
