@@ -35,11 +35,10 @@ if ($username == "" || $password == "") {
             setcookie('remember_user', $username, time() + (86400 * 30), '/');
             setcookie('remember_role', 'user', time() + (86400 * 30), '/');
         }
-
         header('location: ../view/user_dashboard.php');
         exit;
     }
-    header('location: ../view/login.php?error=invalid_user');
+    header('location: ../view/error404.php');
     exit;
 }
 ?>

@@ -1,174 +1,160 @@
 <?php
 session_start();
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
-if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
-    if (isset($_COOKIE['status']) && $_COOKIE['status'] === '1') {
-        $_SESSION['status'] = true;
-        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
-            $_SESSION['username'] = $_COOKIE['remember_user'];
-        }
-    } else {
-        header('location: ../view/login.php?error=badrequest');
-        exit;
+
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    $coverage = $_POST['coverage'] ?? '';
+    $claim = $_POST['claim'] ?? '';
+
+    if (empty($coverage)) {
+        die("Please select a coverage tier.");
     }
+    if (empty($claim)) {
+        die("Please select or enter a claim example.");
+    }
+
+    $coverageData = [
+        'basic' => ['deductible'=>5000],
+        'standard' => ['deductible'=>3000],
+        'premium' => ['deductible'=>1000]
+    ];
+
+    if (!isset($coverageData[$coverage])) {
+        die("Invalid coverage selected.");
+    }
+
+    $_SESSION['insurance'] = [
+        'tier' => $coverage,
+        'deductible' => $coverageData[$coverage]['deductible'],
+        'claim' => $claim,
+        'time' => date('Y-m-d H:i:s')
+    ];
+
+    echo "<h2>Insurance Option Confirmed!</h2>";
+    echo "<p>Coverage Tier: ".htmlspecialchars($coverage)."</p>";
+    echo "<p>Deductible: TK".$coverageData[$coverage]['deductible']."</p>";
+    echo "<p>Selected Claim Example: ".htmlspecialchars($claim)."</p>";
+}
+else {
+    echo "Invalid request.";
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Insurance Options</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f2f9ff;
-      margin: 0;
-      padding: 0;
-    }
-
-    h1 {
-      text-align: center;
-      color: #004080;
-      margin-top: 30px;
-    }
-
-    form {
-      max-width: 500px;
-      margin: 30px auto;
-      padding: 20px;
-      background-color: #ffffff;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-    }
-
-    fieldset {
-      border: 2px solid #66b3ff;
-      padding: 20px;
-      border-radius: 10px;
-    }
-
-    h3 {
-      color: #0066cc;
-    }
-
-    select {
-      width: 100%;
-      padding: 8px;
-      margin: 8px 0;
-      border-radius: 5px;
-      border: 1px solid #ccc;
-    }
-
-    input[type="submit"] {
-      background-color: #3399ff;
-      color: white;
-      padding: 10px 15px;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    input[type="submit"]:hover {
-      background-color: #007acc;
-    }
-
-    p {
-      font-size: 14px;
-    }
-
-    #result, #deductibleDisplay, #payoutResult {
-      font-weight: bold;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Insurance Options</title>
+    <link rel="stylesheet" href="designs.css">
 </head>
 <body>
 <h1>Insurance Options</h1>
-<form onsubmit="return checkForm()">
-  <fieldset>
-    <h3>Coverage Selector:</h3>
-    <label><input type="radio" name="coverage" value="basic"> Basic Coverage</label>
-    <label><input type="radio" name="coverage" value="standard"> Standard Coverage</label>
-    <label><input type="radio" name="coverage" value="premium"> Premium Coverage</label>
-    <p id="coverageError"></p>
 
-    <h3>Choose Claim Amount:</h3>
-    <select id="claimAmount" onchange="setDeductibleAndPayout()">
-      <option value="">--Select Claim Example--</option>
-      <option value="2000">Claim: $2000</option>
-      <option value="5000">Claim: $5000</option>
-      <option value="8000">Claim: $8000</option>
-    </select>
-    <p id="claimError"></p>
+<div class="container">
+    <form id="insuranceForm" action="InsuranceOptions.php" method="POST" onsubmit="return submitInsurance()">
 
-    <h3>Auto-filled Deductible:</h3>
-    <p id="deductibleDisplay"></p>
+        <!-- Coverage Selector -->
+        <label>Select Coverage Tier:</label>
+        <select name="coverage" id="coverage" onchange="updateCoverage()">
+            <option value="">-- Select Tier --</option>
+            <option value="basic">Basic</option>
+            <option value="standard">Standard</option>
+            <option value="premium">Premium</option>
+        </select>
 
-    <h3>Estimated Payout:</h3>
-    <p id="payoutResult"></p>
+        <!-- Deductible Viewer -->
+        <h3>Deductible Amount:</h3>
+        <p id="deductible">TK0</p>
 
-    <input type="submit" value="Submit" />
-    <p id="result"></p>
-  </fieldset>
-</form>
+        <!-- Claim Simulator -->
+        <h3>Claim Examples:</h3>
+        <select name="claim" id="claimDropdown" onchange="checkOtherClaim()">
+            <option value="">-- Select Claim --</option>
+        </select>
+
+        <div id="otherClaimContainer" style="display:none; margin-top:5px;">
+            <input type="text" id="otherClaim" name="otherClaim" placeholder="Describe your claim here...">
+        </div>
+
+        <input type="submit" value="Confirm Option"/>
+    </form>
+</div>
 
 <script>
-  // Mapping claim to deductible
-  const deductibleMap = {
-    "2000": 500,
-    "5000": 1000,
-    "8000": 1500
-  };
+const coverageData = {
+    basic: ["Minor scratch", "Broken side mirror", "Flat tire replacement"],
+    standard: ["Moderate dent repair", "Rear bumper damage", "Windshield crack"],
+    premium: ["Major accident repair", "Engine replacement", "Total loss coverage"]
+};
 
-  function setDeductibleAndPayout() {
-    let claimValue = document.getElementById("claimAmount").value;
+function updateCoverage() {
+    const tier = document.getElementById("coverage").value;
+    const deductibleEl = document.getElementById("deductible");
+    const claimDropdown = document.getElementById("claimDropdown");
+    const otherClaimContainer = document.getElementById("otherClaimContainer");
 
-    if (claimValue) {
-      let deductible = deductibleMap[claimValue];
-      let payout = claimValue - deductible;
+    claimDropdown.innerHTML = '<option value="">-- Select Claim --</option>';
+    otherClaimContainer.style.display = "none";
 
-      document.getElementById("deductibleDisplay").innerHTML = "Deductible: $" + deductible;
-      document.getElementById("deductibleDisplay").style.color = 'blue';
+    if (tier && coverageData[tier]) {
+        // Update deductible
+        const deductibleAmounts = { basic: 5000, standard: 3000, premium: 1000 };
+        deductibleEl.textContent = "TK" + deductibleAmounts[tier];
 
-      document.getElementById("payoutResult").innerHTML = "You will receive: $" + payout + " after deductible.";
-      document.getElementById("payoutResult").style.color = 'green';
+        // Populate dropdown
+        coverageData[tier].forEach(claim => {
+            const option = document.createElement("option");
+            option.value = claim;
+            option.textContent = claim;
+            claimDropdown.appendChild(option);
+        });
+
+        // Add Other option
+        const otherOption = document.createElement("option");
+        otherOption.value = "other";
+        otherOption.textContent = "Other";
+        claimDropdown.appendChild(otherOption);
     } else {
-      document.getElementById("deductibleDisplay").innerHTML = "";
-      document.getElementById("payoutResult").innerHTML = "";
+        deductibleEl.textContent = "TK0";
     }
-  }
+}
 
-  function checkForm() {
-    let valid = true;
-
-    let coverage = document.querySelector('input[name="coverage"]:checked');
-    let claim = document.getElementById("claimAmount").value;
-
-    if (!coverage) {
-      document.getElementById("coverageError").innerHTML = "Please select a coverage tier.";
-      document.getElementById("coverageError").style.color = "red";
-      valid = false;
+function checkOtherClaim() {
+    const claimDropdown = document.getElementById("claimDropdown");
+    const otherClaimContainer = document.getElementById("otherClaimContainer");
+    if (claimDropdown.value === "other") {
+        otherClaimContainer.style.display = "block";
     } else {
-      document.getElementById("coverageError").innerHTML = "";
+        otherClaimContainer.style.display = "none";
     }
+}
 
-    if (!claim) {
-      document.getElementById("claimError").innerHTML = "Please select a claim amount.";
-      document.getElementById("claimError").style.color = "red";
-      valid = false;
-    } else {
-      document.getElementById("claimError").innerHTML = "";
+function submitInsurance() {
+    const tier = document.getElementById("coverage").value;
+    const claimDropdown = document.getElementById("claimDropdown");
+    const selectedClaim = claimDropdown.value;
+
+    if (tier === "") {
+        alert("Please select a coverage tier.");
+        return false;
     }
-
-    if (valid) {
-      document.getElementById("result").innerHTML = "Form submitted successfully!";
-      document.getElementById("result").style.color = "green";
-    } else {
-      document.getElementById("result").innerHTML = "Please fix the errors above.";
-      document.getElementById("result").style.color = "red";
+    if (selectedClaim === "") {
+        alert("Please select a claim example.");
+        return false;
     }
-
-    //return false; // prevent 404 or form submission
-  }
+    if (selectedClaim === "other") {
+        const otherText = document.getElementById("otherClaim").value.trim();
+        if (otherText === "") {
+            alert("Please describe your 'Other' claim.");
+            return false;
+        }
+        // Set hidden input for submission
+        const hiddenOther = document.createElement("input");
+        hiddenOther.type = "hidden";
+        hiddenOther.name = "claim";
+        hiddenOther.value = otherText;
+        document.getElementById("insuranceForm").appendChild(hiddenOther);
+    }
+    return true;
+}
 </script>
 </body>
 </html>
