@@ -29,7 +29,7 @@ $filteredData = array_filter($sampleData, function($item) use ($query, $category
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Search & Filter</title>
-    <link rel="stylesheet" type="text/css" href="ad.css">
+    <link rel="stylesheet" type="text/css" href="../asset/ad.css">
     <script>
         function liveSearch() {
             var query = document.getElementById('searchBox').value.toLowerCase();

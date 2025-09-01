@@ -26,7 +26,7 @@ if (isset($_POST['bulkDelete'])) {
         $filteredUsers = array_filter($filteredUsers, function($user) use ($userIdsToDelete) {
             return !in_array($user['id'], $userIdsToDelete);
         });
-        $validationMessage = count($userIdsToDelete) . " user(s) deleted.";
+        $validationMessage = count($userIdsToDelete) . " users deleted.";
     } else {
         $validationMessage = "Please select at least one user to delete.";
     }

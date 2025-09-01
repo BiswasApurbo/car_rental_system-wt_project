@@ -1,18 +1,14 @@
 <?php
-// Initialize empty variables for saved data
 $name = $licenseNo = $seat = $mirror = "";
 $nameError = $licenseError = $seatError = $mirrorError = "";
 $successMessage = "";
 
-// PHP form submission handling
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Get the form data
     $name = $_POST['name'] ?? '';
     $licenseNo = $_POST['licenseNo'] ?? '';
     $seat = $_POST['seat'] ?? '';
     $mirror = $_POST['mirror'] ?? '';
 
-    // Validation
     $isValid = true;
     
     if (empty($name)) {
@@ -32,7 +28,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $isValid = false;
     }
 
-    // If valid, show the saved preferences message
     if ($isValid) {
         $successMessage = "Preferences saved successfully!";
     }
@@ -45,7 +40,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Customer Profiles</title>
-    <link rel="stylesheet" href="ad.css">
+    <link rel="stylesheet" href="../asset/ad.css">
 </head>
 <body>
     <h2>Customer Profiles</h2>
@@ -107,7 +102,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </fieldset>
     </form>
 
-    <!-- Section to display saved preferences -->
+
     <div id="savedPreferences" style="display:none;">
         <h3>Saved Preferences:</h3>
         <p id="savedName"></p>
@@ -119,24 +114,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         function scanLicense() {
             const file = document.getElementById('license').files[0];
             
-            // Clear any previous error messages
             clearErrors();
 
             if (!file) {
-                // If no file is uploaded, show error message under license input
                 document.getElementById('licenseError').innerText = "Please upload a license file.";
                 return;
             }
 
-            // Auto-fill data after the license file is uploaded (simulated here)
             document.getElementById('name').value = "John Doe";
             document.getElementById('licenseNo').value = "DL-0987654321";
-
-            // Optionally clear the file input or any other actions needed
-            document.getElementById('license').value = '';  // Clear the file input if needed
-
-            // Clear any previous error messages
-            document.getElementById('licenseError').innerText = ''; // Clear any error message
+            document.getElementById('license').value = ''; 
+            document.getElementById('licenseError').innerText = '';
         }
 
         function savePreferences() {
@@ -166,12 +154,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
 
             if (isValid) {
-                // No validation errors, proceed to display saved preferences
                 document.getElementById('savedName').innerText = "Full Name: " + name;
                 document.getElementById('savedSeat').innerText = "Seat Position: " + seat;
                 document.getElementById('savedMirror').innerText = "Mirror Position: " + mirror;
 
-                // Show the saved preferences section
                 document.getElementById('savedPreferences').style.display = 'block';
             }
         }
