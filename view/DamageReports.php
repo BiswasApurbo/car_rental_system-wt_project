@@ -100,6 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <!-- Submit -->
             <input type="submit" value="Submit Report">
             <p id="success"></p>
+            <a href="user_dashboard.php" class="back-button">Back To User Dashboard</a>
         </fieldset>
     </form>
 </div>

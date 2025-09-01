@@ -98,7 +98,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </fieldset>
 
         <fieldset>
-            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.html';">
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php';">
         </fieldset>
     </form>
 
