@@ -79,12 +79,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <input type="submit" value="Login" />
     <p id="loginSuccess" class="error-msg"></p>
 </fieldset>
-<p>
-<a href="signup.html">Sign up</a> |
-<a href="forgot.html">Forgot Password?</a>
-</p>
-</form>
+<div style="display:flex; justify-content:center; gap:15px; margin-top:10px;">
+    <input type="button" 
+           value="Forgot Password" 
+           onclick="window.location.href='forgot.html.php'">
 
+    <input type="button" 
+           value="Sign Up" 
+           onclick="window.location.href='signup.php'">
+</div>
+</form>
 <script>
 function checkLoginUsername() {
     let username = document.getElementById('loginUsername').value;

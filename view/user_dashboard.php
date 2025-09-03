@@ -37,7 +37,7 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
             <legend>Quick Actions</legend>
             <input type="button" value="My Profile" onclick="window.location.href='profile.php'" />
             <input type="button" value="Notifications" onclick="window.location.href='notification.php'" />
-            <input type="button" value="Contact Us" onclick="window.location.href='contact.html'" />
+            <input type="button" value="Contact Us" onclick="window.location.href='contact.php'" />
             <input type="button" value="Rent Car" onclick="window.location.href='vehicle_inventory.php'" />
             <input type="button" value="Damage Report" onclick="window.location.href='DamageReports.php'" />
             <input type="button" value="Logout" onclick="window.location.href='../controller/logout.php'" />
