@@ -5,21 +5,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $fuelLevel = $_POST['fuelLevel'] ?? '';
     $refuelLiters = $_POST['refuelLiters'] ?? '';
 
-    // Validation: check inputs
     if ($fuelLevel === '' || $refuelLiters === '' || !isset($_FILES['receiptUpload'])) {
         die("Please fill all fields and upload receipt.");
     }
 
-    // Ensure logical validation: fuel level >= refuel liters
     if (floatval($fuelLevel) < floatval($refuelLiters)) {
         die("Error: Fuel level at checkout must be greater than or equal to refuel liters.");
     }
 
-    // File upload
     $uploadDir = "GasReceiptUploads/";
-    if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
-    }
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
     $file = $_FILES['receiptUpload'];
     $fileName = time() . "_" . basename($file['name']);
@@ -33,15 +28,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             'time' => date('Y-m-d H:i:s')
         ];
 
-        echo "<h2>Fuel record submitted successfully!</h2>";
+        echo "<h2 style='color:green;'>Fuel record submitted successfully!</h2>";
         echo "<p>Fuel Level: ".htmlspecialchars($fuelLevel)." liters</p>";
         echo "<p>Refuel Liters: ".htmlspecialchars($refuelLiters)." liters</p>";
         echo "<p>Receipt: <a href='".htmlspecialchars($filePath)."' target='_blank'>View Receipt</a></p>";
+
+        echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+        echo ' <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+
+        exit;
     } else {
-        echo "Failed to upload receipt.";
+        die("Failed to upload receipt.");
     }
-} else {
-    echo "Invalid request.";
 }
 ?>
 <!DOCTYPE html>
@@ -49,33 +47,32 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8">
     <title>Fuel Tracking</title>
-    <link rel="stylesheet" href="designs.css">
+    <link rel="stylesheet" href="../asset/designs.css">
 </head>
 <body>
 <h1>Fuel Tracking</h1>
 
 <div class="container">
-    <form id="fuelForm" action="FuelTracking.php" method="POST" onsubmit="return submitFuel()" enctype="multipart/form-data">
+<form id="fuelForm" action="FuelTracking.php" method="POST" onsubmit="return submitFuel()" enctype="multipart/form-data">
+    <label>Fuel Level at Checkout (liters):</label>
+    <input type="number" id="fuelLevel" name="fuelLevel" min="0" step="0.1" placeholder="e.g., 5.5" />
 
-        <!-- Fuel Gauge -->
-        <label>Fuel Level at Checkout (liters):</label>
-        <input type="number" id="fuelLevel" name="fuelLevel" min="0" step="0.1" placeholder="e.g., 5.5" />
+    <label>Refuel Needed (liters):</label>
+    <input type="number" id="refuelLiters" name="refuelLiters" min="0" step="0.1" placeholder="Enter liters to refuel" oninput="calculateCost()" />
 
-        <!-- Refuel Calculator -->
-        <label>Refuel Needed (liters):</label>
-        <input type="number" id="refuelLiters" name="refuelLiters" min="0" step="0.1" placeholder="Enter liters to refuel" oninput="calculateCost()" />
+    <p><strong>Price per liter:</strong> TK 120</p>
+    <p><strong>Total Refuel Cost:</strong> TK <span id="totalCost">0.00</span></p>
 
-        <p><strong>Price per liter:</strong> TK 120</p>
-        <p><strong>Total Refuel Cost:</strong> TK <span id="totalCost">0.00</span></p>
+    <label>Upload Gas Receipt:</label>
+    <input type="file" id="receiptUpload" name="receiptUpload" accept="image/*" />
 
-        <!-- Receipt Upload -->
-        <label>Upload Gas Receipt:</label>
-        <input type="file" id="receiptUpload" name="receiptUpload" accept="image/*" />
+    <p id="formError" style="color:red; font-size:12px;"></p>
 
-        <p id="formError" style="color:red; font-size:12px;"></p>
-
-        <input type="submit" value="Submit Fuel Record" />
-    </form>
+    <input type="submit" value="Submit Fuel Record" />
+    <br> <br>
+    <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+</form>
 </div>
 
 <script>

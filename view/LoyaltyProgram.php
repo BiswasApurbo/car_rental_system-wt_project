@@ -1,9 +1,9 @@
 <?php
 session_start();
 
-// Initialize points if not set
+
 if (!isset($_SESSION['points'])) {
-    $_SESSION['points'] = 1250; // starting points
+    $_SESSION['points'] = 2000; 
 }
 
 $message = "";
@@ -16,21 +16,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redeemPoints'])) {
         $message = "<p class='alert-box alert-danger'>❌ Not enough points to redeem.</p>";
     }
 }
+
 $currentPoints = $_SESSION['points'];
 
-// Determine tier
-if ($currentPoints >= 2000) {
+if ($currentPoints >= 2500) {
     $tier = "Platinum";
     $nextTierPoints = "Max tier reached 🎉";
-    $progress = 100;
-} elseif ($currentPoints >= 500) {
+    $progress = ($currentPoints / 3000) * 100;
+} elseif ($currentPoints >= 1000) {
     $tier = "Gold";
-    $nextTierPoints = 2000 - $currentPoints;
-    $progress = ($currentPoints / 2000) * 100;
+    $nextTierPoints = 2500 - $currentPoints;
+    $progress = ($currentPoints / 3000) * 100;
 } else {
     $tier = "Silver";
-    $nextTierPoints = 500 - $currentPoints;
-    $progress = ($currentPoints / 500) * 100;
+    $nextTierPoints = 1000 - $currentPoints;
+    $progress = ($currentPoints / 3000) * 100;
 }
 ?>
 <!DOCTYPE html>
@@ -38,17 +38,29 @@ if ($currentPoints >= 2000) {
 <head>
     <meta charset="UTF-8">
     <title>Loyalty Program</title>
-    <link rel="stylesheet" href="LoyaltyProgram.css">
+    <link rel="stylesheet" href="../asset/LoyaltyProgram.css">
+    <style>
+        .form-wrapper { max-width: 700px; margin: 20px auto; padding: 20px; border: 1px solid #ccc; border-radius: 10px; }
+        .points-bar { background: #eee; border-radius: 10px; width: 100%; height: 20px; margin-bottom: 15px; }
+        .points-progress { height: 100%; background: #1f6feb; border-radius: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        table, th, td { border: 1px solid #ccc; }
+        th, td { padding: 8px; text-align: left; }
+        .alert-box { padding: 10px; margin-bottom: 15px; border-radius: 6px; }
+        .alert-success { background-color: #d4edda; color: #155724; }
+        .alert-danger { background-color: #f8d7da; color: #721c24; }
+        input[type=submit], input[type=button] { cursor: pointer; }
+    </style>
 </head>
 <body>
 <div class="form-wrapper">
     <fieldset>
         <h1>Loyalty Program Dashboard</h1>
 
-        <!-- Message -->
+     
         <?= $message ?>
 
-        <!-- Points Tracker -->
+        
         <h2>💎 Points Tracker</h2>
         <p>Current Points: <strong id="currentPoints"><?= $currentPoints ?></strong></p>
         <p>Current Tier: <strong><?= $tier ?></strong></p>
@@ -57,7 +69,6 @@ if ($currentPoints >= 2000) {
             <div class="points-progress" style="width: <?= $progress ?>%;"></div>
         </div>
 
-        <!-- Reward Catalog -->
         <h2>🎁 Reward Catalog</h2>
         <table>
             <tr>
@@ -97,13 +108,18 @@ if ($currentPoints >= 2000) {
             </tr>
         </table>
 
-        <!-- Tier Benefits -->
+       
         <h2>🏆 Tier Benefits</h2>
         <ul>
-            <li>Silver: 0-499 points – Basic benefits</li>
-            <li>Gold: 500-1999 points – Free upgrades, priority support</li>
-            <li>Platinum: 2000+ points – Exclusive rewards, VIP support</li>
+            <li>Silver: 0-999 points – Basic benefits</li>
+            <li>Gold: 1000-2499 points – Free upgrades, priority support</li>
+            <li>Platinum: 2500-3000 points – Exclusive rewards, VIP support</li>
         </ul>
+
+        <br><br>
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;"> 
+
     </fieldset>
 </div>
 

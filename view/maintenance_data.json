@@ -1,0 +1,14 @@
+[
+    {
+        "date": "2025-02-01",
+        "name": "Refuel service of gas",
+        "odometer": "300",
+        "remarks": "next due to 100 km"
+    },
+    {
+        "date": "2025-08-30",
+        "name": "Refuel service of octane",
+        "odometer": "500",
+        "remarks": "next due to 300 km"
+    }
+]

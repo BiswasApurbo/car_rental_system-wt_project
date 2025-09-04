@@ -33,9 +33,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     echo "<p>Coverage Tier: ".htmlspecialchars($coverage)."</p>";
     echo "<p>Deductible: TK".$coverageData[$coverage]['deductible']."</p>";
     echo "<p>Selected Claim Example: ".htmlspecialchars($claim)."</p>";
-}
-else {
-    echo "Invalid request.";
+
+    echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+    echo ' <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+
+    exit; 
 }
 ?>
 <!DOCTYPE html>
@@ -43,15 +45,13 @@ else {
 <head>
     <meta charset="UTF-8">
     <title>Insurance Options</title>
-    <link rel="stylesheet" href="designs.css">
+    <link rel="stylesheet" href="../asset/designs.css">
 </head>
 <body>
 <h1>Insurance Options</h1>
 
 <div class="container">
     <form id="insuranceForm" action="InsuranceOptions.php" method="POST" onsubmit="return submitInsurance()">
-
-        <!-- Coverage Selector -->
         <label>Select Coverage Tier:</label>
         <select name="coverage" id="coverage" onchange="updateCoverage()">
             <option value="">-- Select Tier --</option>
@@ -60,11 +60,9 @@ else {
             <option value="premium">Premium</option>
         </select>
 
-        <!-- Deductible Viewer -->
         <h3>Deductible Amount:</h3>
         <p id="deductible">TK0</p>
 
-        <!-- Claim Simulator -->
         <h3>Claim Examples:</h3>
         <select name="claim" id="claimDropdown" onchange="checkOtherClaim()">
             <option value="">-- Select Claim --</option>
@@ -75,6 +73,10 @@ else {
         </div>
 
         <input type="submit" value="Confirm Option"/>
+        <br> <br>
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+
     </form>
 </div>
 
@@ -95,11 +97,9 @@ function updateCoverage() {
     otherClaimContainer.style.display = "none";
 
     if (tier && coverageData[tier]) {
-        // Update deductible
         const deductibleAmounts = { basic: 5000, standard: 3000, premium: 1000 };
         deductibleEl.textContent = "TK" + deductibleAmounts[tier];
 
-        // Populate dropdown
         coverageData[tier].forEach(claim => {
             const option = document.createElement("option");
             option.value = claim;
@@ -107,7 +107,6 @@ function updateCoverage() {
             claimDropdown.appendChild(option);
         });
 
-        // Add Other option
         const otherOption = document.createElement("option");
         otherOption.value = "other";
         otherOption.textContent = "Other";
@@ -146,7 +145,6 @@ function submitInsurance() {
             alert("Please describe your 'Other' claim.");
             return false;
         }
-        // Set hidden input for submission
         const hiddenOther = document.createElement("input");
         hiddenOther.type = "hidden";
         hiddenOther.name = "claim";
