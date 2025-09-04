@@ -44,7 +44,9 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
         <fieldset class="profile-actions">
             <input type="button" value="Edit Profile" onclick="window.location.href='edit_profile.php'">
             <input type="button" value="Update Password" onclick="window.location.href='update_password.php'">
-            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'">
+            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'"> <br> <br> <br>
+            <div>Click here for services:</div>
+            <input type="button" value="Customer Services" onclick="window.location.href='customer_services.php'">
         </fieldset>
     </form>
 </body>
