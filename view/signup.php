@@ -1,32 +1,15 @@
 <?php
 session_start();
 
-$username = '';
-$email = '';
-$errors = ['username'=>'', 'email'=>'', 'password'=>''];
-$success = '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim($_POST['username'] ?? '');
-    $email    = trim($_POST['email'] ?? '');
-    $password = $_POST['password'] ?? '';
-
-    if ($username === '') {
-        $errors['username'] = 'Please type username!';
-    } elseif (mb_strlen($username) < 3) {
-        $errors['username'] = 'Username must be at least 3 characters!';
-    }
-
-    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors['email'] = 'Please enter a valid email!';
-    }
-
-    if (strlen($password) < 4) {
-        $errors['password'] = 'Password must be at least 4 characters!';
-    }
-
-    if ($errors['username'] === '' && $errors['email'] === '' && $errors['password'] === '') {
-        $success = 'Signup successful! You can now log in.';
+$errorMsg = '';
+if (isset($_GET['error'])) {
+    $err = $_GET['error'];
+    if ($err === 'email_exists') {
+        $errorMsg = 'This email is already registered.';
+    } elseif ($err === 'regerror') {
+        $errorMsg = 'Registration failed. Try again.';
+    } elseif ($err === 'badrequest') {
+        $errorMsg = 'Please fill the form correctly.';
     }
 }
 ?>
@@ -40,37 +23,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .error-msg { color: red; font-weight: 600; margin: 4px 0; }
         .ok { color: green; font-weight: 700; margin-top: 10px; text-align: center; }
         .center-under { text-align: center; font-weight: 700; margin: 6px 0 14px; color: green; }
+        .notice { text-align:center; font-weight:700; color:green; margin-bottom:12px; }
     </style>
 </head>
 <body>
     <h1>Signup Page</h1>
 
-    <?php if ($success): ?>
-        <p class="center-under"><?= htmlspecialchars($success) ?></p>
+    <?php if ($errorMsg): ?>
+        <p class="notice"><?= htmlspecialchars($errorMsg) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="" onsubmit="return signupCheck()">
+    <form method="post" action="../controller/signupCheck.php" onsubmit="return signupCheck()">
         <fieldset>
             Username:
-            <input type="text" id="signupUsername" name="username" value="<?= htmlspecialchars($username) ?>" onblur="checkSignupUsername()" />
-            <p id="signupUError" class="error-msg"><?= htmlspecialchars($errors['username']) ?></p>
+            <input type="text" id="signupUsername" name="username" onblur="checkSignupUsername()" />
+            <p id="signupUError" class="error-msg"></p>
 
             Email:
-            <input type="text" id="signupEmail" name="email" value="<?= htmlspecialchars($email) ?>" onblur="checkSignupEmail()" />
-            <p id="signupEError" class="error-msg"><?= htmlspecialchars($errors['email']) ?></p>
+            <input type="text" id="signupEmail" name="email" onblur="checkSignupEmail()" />
+            <p id="signupEError" class="error-msg"></p>
 
             Password:
             <input type="password" id="signupPassword" name="password" onblur="checkSignupPassword()" />
-            <p id="signupPError" class="error-msg"><?= htmlspecialchars($errors['password']) ?></p>
+            <p id="signupPError" class="error-msg"></p>
 
             <input type="submit" value="Sign Up" />
             <p id="signupSuccess" class="ok"></p>
         </fieldset>
-<p style="text-align:center;">
-    <input type="button" 
-           value="Login" 
-           onclick="window.location.href='login.php'">
-</p>
+
+        <p style="text-align:center;">
+            <input type="button" 
+                   value="Login" 
+                   onclick="window.location.href='login.php'">
+        </p>
     </form>
 
     <script>

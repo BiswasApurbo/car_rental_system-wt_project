@@ -1,162 +1,203 @@
 <?php
-// Static list of users (simulating data without a database)
-$users = [
-    ['id' => 1, 'username' => 'admin1', 'email' => 'admin1@example.com', 'role' => 'Admin'],
-    ['id' => 2, 'username' => 'editor1', 'email' => 'editor1@example.com', 'role' => 'Editor'],
-    ['id' => 3, 'username' => 'user1', 'email' => 'user1@example.com', 'role' => 'User'],
-    ['id' => 4, 'username' => 'car1', 'email' => 'car1@example.com', 'role' => 'Vehicles'],
-    ['id' => 5, 'username' => 'user2', 'email' => 'user2@example.com', 'role' => 'User']
-];
+session_start();
+require_once('../model/userModel.php');
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
+        $_SESSION['status'] = true;
+        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
+            $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+        if (!isset($_SESSION['role']) && isset($_COOKIE['remember_role'])) {
+            $c = strtolower(trim((string)$_COOKIE['remember_role']));
+            $_SESSION['role'] = ($c === 'admin') ? 'Admin' : 'User';
+        }
+    } else {
+        header('location: ../view/login.php?error=badrequest');
+        exit;
+    }
+}
+if (strtolower($_SESSION['role']) !== 'admin') {
+    header('location: ../view/login.php?error=badrequest');
+    exit;
+}
+$validationMessage = '';
+$roleFilter = $_POST['roleFilter'] ?? 'All';
 
-// Handling filter by role
-$roleFilter = isset($_POST['roleFilter']) ? $_POST['roleFilter'] : 'All';
-$filteredUsers = $users;
+function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
 
-if ($roleFilter != 'All') {
-    $filteredUsers = array_filter($users, function($user) use ($roleFilter) {
-        return $user['role'] === $roleFilter;
-    });
+if (isset($_GET['deleteUserId'])) {
+    $userIdToDelete = (int) $_GET['deleteUserId'];
+    if ($userIdToDelete > 0) {
+        if (deleteUser($userIdToDelete)) {
+            $validationMessage = "1 user deleted.";
+        } else {
+            $validationMessage = "Delete failed. Try again.";
+        }
+    }
+    header("Location: " . basename(__FILE__));
+    exit;
 }
 
-// Handling bulk delete
-$validationMessage = '';
 if (isset($_POST['bulkDelete'])) {
-    if (!empty($_POST['user_ids'])) {
-        $userIdsToDelete = $_POST['user_ids'];
-        $filteredUsers = array_filter($filteredUsers, function($user) use ($userIdsToDelete) {
-            return !in_array($user['id'], $userIdsToDelete);
-        });
-        $validationMessage = count($userIdsToDelete) . " users deleted.";
+    if (!empty($_POST['user_ids']) && is_array($_POST['user_ids'])) {
+        $ids = array_map('intval', $_POST['user_ids']);
+        $deleted = 0;
+        foreach ($ids as $id) {
+            if ($id > 0) {
+                if (deleteUser($id)) $deleted++;
+            }
+        }
+        $validationMessage = $deleted . " user(s) deleted.";
     } else {
         $validationMessage = "Please select at least one user to delete.";
     }
 }
 
-// Handling export to CSV
 if (isset($_POST['exportCSV'])) {
-    // Open output stream for CSV download
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="users.csv"');
-    $output = fopen('php://output', 'w');
-    
-    // Add column headers
-    fputcsv($output, ['User ID', 'Username', 'Email', 'Role']);
-
-    // Write filtered users to CSV
-    foreach ($filteredUsers as $user) {
-        fputcsv($output, [$user['id'], $user['username'], $user['email'], $user['role']]);
+    $all = getAlluser();
+    $rows = [];
+    if ($roleFilter === 'All') {
+        $rows = $all;
+    } else {
+        foreach ($all as $r) {
+            if (isset($r['role']) && $r['role'] === $roleFilter) $rows[] = $r;
+        }
     }
 
-    fclose($output);
-    exit();
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="users.csv"');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['User ID','Username','Email','Role']);
+    foreach ($rows as $r) {
+        fputcsv($out, [
+            $r['id'] ?? '',
+            $r['username'] ?? '',
+            $r['email'] ?? '',
+            $r['role'] ?? ''
+        ]);
+    }
+    fclose($out);
+    exit;
 }
 
-// Handling single delete
-if (isset($_GET['deleteUserId'])) {
-    $userIdToDelete = $_GET['deleteUserId'];
-    $filteredUsers = array_filter($filteredUsers, function($user) use ($userIdToDelete) {
-        return $user['id'] != $userIdToDelete;
-    });
+$allUsers = getAlluser();
+$roleList = ['All'];
+foreach ($allUsers as $u) {
+    $roleVal = $u['role'] ?? '';
+    if ($roleVal === '') continue;
+    if (!in_array($roleVal, $roleList, true)) $roleList[] = $roleVal;
+}
+
+$filteredUsers = [];
+if ($roleFilter === 'All') {
+    $filteredUsers = $allUsers;
+} else {
+    foreach ($allUsers as $u) {
+        if (isset($u['role']) && $u['role'] === $roleFilter) $filteredUsers[] = $u;
+    }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel - User Management</title>
-    <link rel="stylesheet" type="text/css" href="ad.css">
+    <link rel="stylesheet" type="text/css" href="../asset/ad.css">
+    <style>
+        .admin-card{max-width:1100px;margin:18px auto;padding:18px;background:#fff;border-radius:8px;box-shadow:0 0 8px #ddd}
+        table.users{width:100%;border-collapse:collapse;margin-top:12px}
+        table.users th, table.users td{border:1px solid #e1e1e1;padding:8px;text-align:left}
+        table.users th{background:#f7f7f7}
+        table.users tr:nth-child(even){background:#fafafa}
+        .actions button{margin-right:6px}
+        fieldset.controls{border:none;padding:0;margin:0}
+        .validation{font-weight:700;margin:8px 0;color:green}
+        .warn{color:red;font-weight:700}
+    </style>
     <script>
-        // Function for Bulk Delete
+        function applyFilter() {
+            document.getElementById('filterForm').submit();
+        }
         function bulkDelete() {
             if (confirm("Are you sure you want to delete the selected users?")) {
                 document.getElementById('bulkDeleteForm').submit();
             }
         }
-
-        // Function for Export CSV
         function exportCSV() {
             document.getElementById('exportCSVForm').submit();
+        }
+        function toggleSelectAll(source) {
+            const checkboxes = document.querySelectorAll("input[name='user_ids[]']");
+            checkboxes.forEach(cb => cb.checked = source.checked);
         }
     </script>
 </head>
 <body>
-    <h1>Admin Panel - User Management</h1>
     <div class="admin-card">
-        <!-- Filter by Role Section -->
+        <h1>Admin Panel - User Management</h1>
+
         <form id="filterForm" method="POST" action="">
-            <fieldset>
-                <label for="adminFilter">Filter by role:</label>
-                <select id="adminFilter" name="roleFilter" onchange="applyFilter()">
-                    <option value="All" <?php if ($roleFilter == 'All') echo 'selected'; ?>>All</option>
-                    <option value="Admin" <?php if ($roleFilter == 'Admin') echo 'selected'; ?>>Admin</option>
-                    <option value="Editor" <?php if ($roleFilter == 'Editor') echo 'selected'; ?>>Editor</option>
-                    <option value="User" <?php if ($roleFilter == 'User') echo 'selected'; ?>>User</option>
-                    <option value="Vehicles" <?php if ($roleFilter == 'Vehicles') echo 'selected'; ?>>Vehicles</option>
+            <fieldset class="controls">
+                <label for="roleFilter">Filter by role:</label>
+                <select id="roleFilter" name="roleFilter" onchange="applyFilter()">
+                    <?php foreach ($roleList as $r): ?>
+                        <option value="<?= h($r) ?>" <?= ($r === $roleFilter) ? 'selected' : '' ?>><?= h($r) ?></option>
+                    <?php endforeach; ?>
                 </select>
             </fieldset>
         </form>
 
-        <!-- Validation Message Section -->
-        <div id="validationMessage" style="margin: 10px; font-weight: bold;">
-            <?php 
-                if (!empty($validationMessage)) {
-                    echo $validationMessage;
-                }
-            ?>
-        </div>
+        <?php if ($validationMessage): ?>
+            <div class="validation"><?= h($validationMessage) ?></div>
+        <?php endif; ?>
 
-        <!-- User List Section -->
         <form id="bulkDeleteForm" method="POST" action="">
             <fieldset>
                 <label>Users List:</label>
-                <table>
-                    <tr>
-                        <th>Select</th>
-                        <th>User ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Actions</th>
-                    </tr>
-                    <?php
-                    if (count($filteredUsers) > 0) {
-                        foreach ($filteredUsers as $user) {
-                            echo "<tr>";
-                            echo "<td><input type='checkbox' name='user_ids[]' value='{$user['id']}'></td>";
-                            echo "<td>{$user['id']}</td>";
-                            echo "<td>{$user['username']}</td>";
-                            echo "<td>{$user['email']}</td>";
-                            echo "<td>{$user['role']}</td>";
-                            echo "<td>
-                                    <button type='button' onclick=\"window.location.href='admin_panel_user_management.php?deleteUserId={$user['id']}'\">Delete</button>
-                                  </td>";
-                            echo "</tr>";
-                        }
-                    } else {
-                        echo "<tr><td colspan='6'>No users found</td></tr>";
-                    }
-                    ?>
+                <table class="users" aria-describedby="users-list">
+                    <caption id="users-list">All registered users</caption>
+                    <thead>
+                        <tr>
+                            <th style="width:6%"><input type="checkbox" onclick="toggleSelectAll(this)"></th>
+                            <th style="width:6%">User ID</th>
+                            <th style="width:24%">Username</th>
+                            <th style="width:34%">Email</th>
+                            <th style="width:12%">Role</th>
+                            <th style="width:18%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (count($filteredUsers) > 0): ?>
+                            <?php foreach ($filteredUsers as $user): ?>
+                                <tr>
+                                    <td><input type="checkbox" name="user_ids[]" value="<?= (int)$user['id'] ?>"></td>
+                                    <td><?= h($user['id']) ?></td>
+                                    <td><?= h($user['username']) ?></td>
+                                    <td><?= h($user['email'] ?? '—') ?></td>
+                                    <td><?= h($user['role'] ?? 'User') ?></td>
+                                    <td class="actions">
+                                        <button type="button" onclick="window.location.href='editUser.php?id=<?= (int)$user['id'] ?>'">Edit</button>
+                                        <button type="button" onclick="if(confirm('Delete user <?= h($user['username']) ?>?')){ window.location.href='<?= basename(__FILE__) ?>?deleteUserId=<?= (int)$user['id'] ?>'; }">Delete</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="6">No users found.</td></tr>
+                        <?php endif; ?>
+                    </tbody>
                 </table>
-            </fieldset>
 
-            <!-- Bulk Actions Section -->
-            <fieldset>
+                <br>
                 <input type="button" value="Bulk Delete" onclick="bulkDelete()">
                 <input type="button" value="Export CSV" onclick="exportCSV()">
+                <input type="button" value="Back to Dashboard" onclick="window.location.href='admin_dashboard.php'">
             </fieldset>
         </form>
-
-        <!-- Navigation Back to Dashboard -->
-        <fieldset>
-            <input type="button" value="Back to Dashboard" onclick="window.location.href='admin_dashboard.html'">
-        </fieldset>
+        <form id="exportCSVForm" method="POST" action="" style="display:none;">
+            <input type="hidden" name="exportCSV" value="true">
+            <input type="hidden" name="roleFilter" value="<?= h($roleFilter) ?>">
+        </form>
     </div>
-    
-    <!-- Form for Exporting CSV -->
-    <form id="exportCSVForm" method="POST" action="" style="display:none;">
-        <input type="hidden" name="exportCSV" value="true">
-    </form>
 </body>
 </html>
