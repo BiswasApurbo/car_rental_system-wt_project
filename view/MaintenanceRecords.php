@@ -3,11 +3,7 @@ session_start();
 require_once "../model/MaintenanceModel.php";
 
 $model = new MaintenanceModel();
-
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1;
-}
-$user_id = $_SESSION['user_id'];
+$user_id = $_SESSION['user_id'] ?? 1;  
 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_service'])) {
@@ -24,15 +20,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_service'])) {
     }
 }
 
-
 if (isset($_GET['delete'])) {
     $deleteId = intval($_GET['delete']);
     $model->deleteService($deleteId, $user_id);
     $message = "Service deleted successfully!";
 }
-
 $services = $model->getServicesByUser($user_id);
-
 
 $alerts = [];
 if (!empty($services)) {
@@ -47,13 +40,7 @@ if (!empty($services)) {
     }
 }
 
-
-$recommended = [
-    ["service_name" => "Oil Change", "odometer_increment" => 5000],
-    ["service_name" => "Tire Rotation", "odometer_increment" => 10000],
-    ["service_name" => "Brake Inspection", "odometer_increment" => 15000],
-];
-
+$recommended = $model->getRecommendedServices();
 $next_odometer = !empty($services) ? intval($services[0]['odometer']) : 0;
 ?>
 <!DOCTYPE html>
@@ -78,7 +65,6 @@ function fillService(serviceName, odometerValue, remarks) {
 <?php if(isset($message)) echo "<div class='alert-box alert-success'>$message</div>"; ?>
 <?php if(isset($error)) echo "<div class='alert-box alert-error'>$error</div>"; ?>
 
-
 <h2>🔔 Notifications / Alerts</h2>
 <div>
 <?php
@@ -94,17 +80,16 @@ if (!empty($alerts)) {
 ?>
 </div>
 
-
 <h2>📝 Recommended Services</h2>
 <div>
 <?php
 if (!empty($recommended)) {
     echo "<ul>";
     foreach($recommended as $r) {
-        $rec_odometer = $next_odometer + $r['odometer_increment'];
+        $rec_odometer = $next_odometer + intval($r['description'] ?? 0); 
         echo "<li>
             <a href='#' onclick=\"fillService('{$r['service_name']}', {$rec_odometer}, 'Recommended service'); return false;\">
-                {$r['service_name']} (Recommended at {$rec_odometer} km)
+                {$r['service_name']}
             </a>
         </li>";
     }
@@ -134,7 +119,6 @@ if (!empty($recommended)) {
     </tr>
     <?php endforeach; ?>
 </table>
-
 
 <h2>📊 Add New Service / Odometer Log</h2>
 <form method="post">

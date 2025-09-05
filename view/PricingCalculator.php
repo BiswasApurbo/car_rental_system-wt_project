@@ -1,69 +1,49 @@
 <?php
 session_start();
-require_once '../model/PricingModel.php';
+require_once "../model/PricingModel.php";
 
 $model = new PricingModel();
+
+
+$settings = $model->getSettings();
+$baseFeePerDay = $settings['base_fee_per_day'] ?? 500; 
+$promoCodes = $model->getAllPromoCodes(); 
+
 $quote = null;
 $error = "";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $days = $_POST['days'] ?? '';
     $promo = $_POST['promo'] ?? '';
-    $totalAmount = $_POST['totalAmount'] ?? '';
 
     if (empty($days) || !is_numeric($days) || $days <= 0) {
         $error = "Please enter a valid number of rental days.";
     } else {
-        $validPromo = ['1234'=>50, '5678'=>30];
-        $discountPercent = $validPromo[$promo] ?? 0;
-
-        $baseFee = 500 * $days;
+        $discountPercent = $promoCodes[$promo] ?? 0;
+        $baseFee = $baseFeePerDay * $days;
         $discountAmount = ($discountPercent / 100) * $baseFee;
         $tax = 0.1 * $baseFee;
         $total = $baseFee + $tax - $discountAmount;
 
-        
-        $userId = $_SESSION['user_id'] ?? 1; 
-        $model->addQuote(
-            $userId, 
-            intval($days), 
-            $promo ?: null, 
-            $discountPercent, 
-            $discountAmount, 
-            $baseFee, 
-            $tax, 
-            $total
-        );
-
         $_SESSION['quote'] = [
-            'days'            => $days,
-            'promo'           => $promo,
+            'days' => $days,
+            'promo' => $promo,
             'discountPercent' => $discountPercent,
-            'discountAmount'  => $discountAmount,
-            'baseFee'         => $baseFee,
-            'tax'             => $tax,
-            'total'           => $total
+            'discountAmount' => $discountAmount,
+            'baseFee' => $baseFee,
+            'tax' => $tax,
+            'total' => $total
         ];
 
         $quote = $_SESSION['quote'];
-    }
 
-    if ($quote) {
-        echo "<h2>Quote Generated Successfully!</h2>";
-        echo "<p>Rental Days: ".htmlspecialchars($quote['days'])."</p>";
-        echo "<p>Promo Code: ".htmlspecialchars($quote['promo'])." ({$quote['discountPercent']}% discount)</p>";
-        echo "<p>Base Fee: TK".number_format($quote['baseFee'],2)."</p>";
-        echo "<p>Tax (10%): TK".number_format($quote['tax'],2)."</p>";
-        echo "<p>Discount: TK".number_format($quote['discountAmount'],2)."</p>";
-        echo "<p><strong>Total: TK".number_format($quote['total'],2)."</strong></p><br>";
-
-        echo '<input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;"> ';
-        echo '<input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-
-        exit; 
+        if (isset($_SESSION['user_id'])) {
+            $model->addRecord($_SESSION['user_id'], $days, $promo, $discountPercent, $discountAmount, $baseFee, $tax, $total);
+        }
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,6 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .message { font-size: 14px; margin: 4px 0; }
         .green { color: green; }
         .red { color: red; }
+        .button-container { display: flex; gap: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -90,43 +71,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input type="number" name="days" id="days" oninput="updatePrice()" min="1"/>
 
     <label>Promo Code:</label>
-    <input type="text" name="promo" id="promo" oninput="applyPromo()"/>
-    <div class="note">
-        Use <b>1234</b> for <b>50%</b> off<br>
-        Use <b>5678</b> for <b>30%</b> off
-    </div>
+    <input list="promoList" name="promo" id="promo" oninput="applyPromo()"/>
+    <datalist id="promoList">
+        <?php foreach ($promoCodes as $code => $percent): ?>
+            <option value="<?= htmlspecialchars($code) ?>"><?= $percent ?>% off</option>
+        <?php endforeach; ?>
+    </datalist>
     <p id="promoMessage" class="message"></p>
 
     <h3>Fee Breakdown (Preview):</h3>
-    <p>Base Fee (TK500/day): <span id="base">TK0.00</span></p>
+    <p>Base Fee (TK<?= number_format($baseFeePerDay,2) ?>/day): <span id="base">TK0.00</span></p>
     <p>Tax (10%): <span id="tax">TK0.00</span></p>
     <p>Discount: <span id="discount">TK0.00</span> (<span id="discountPercent">0%</span>)</p>
     <p><strong>Total: <span id="total">TK0.00</span></strong></p>
 
     <input type="hidden" name="totalAmount" id="totalAmount"/>
-    <input type="submit" value="Get Quote"/> <br><br>
-    <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-    <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    <input type="submit" value="Get Quote"/>
+    <br><br>
+    <div class="button-container">
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    </div>
 </form>
+<?php else: ?>
+<div style="margin-top:20px;">
+    <h2 style="color:green;">Quote Generated Successfully!</h2>
+    <p>Rental Days: <?= htmlspecialchars($quote['days']) ?></p>
+    <p>Promo Code: <?= htmlspecialchars($quote['promo']) ?> (<?= $quote['discountPercent'] ?>% discount)</p>
+    <p>Base Fee: TK<?= number_format($quote['baseFee'],2) ?></p>
+    <p>Tax (10%): TK<?= number_format($quote['tax'],2) ?></p>
+    <p>Discount: TK<?= number_format($quote['discountAmount'],2) ?></p>
+    <p><strong>Total: TK<?= number_format($quote['total'],2) ?></strong></p>
+
+    <div class="button-container">
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    </div>
+</div>
 <?php endif; ?>
 </div>
 
-<?php if (!$quote): ?>
 <script>
-let baseRate = 500;
+let baseRate = <?= $baseFeePerDay ?>;
 let discountPercent = 0;
+let promoCodes = <?= json_encode($promoCodes) ?>;
 
 function applyPromo() {
     const code = document.getElementById("promo").value.trim();
     const msg = document.getElementById("promoMessage");
 
-    if (code === "1234") {
-        discountPercent = 50;
-        msg.textContent = "50% off applied!";
-        msg.className = "message green";
-    } else if (code === "5678") {
-        discountPercent = 30;
-        msg.textContent = "30% off applied!";
+    if (code in promoCodes) {
+        discountPercent = promoCodes[code];
+        msg.textContent = discountPercent + "% off applied!";
         msg.className = "message green";
     } else if (code === "") {
         discountPercent = 0;
@@ -137,7 +133,6 @@ function applyPromo() {
         msg.textContent = "Invalid promo code!";
         msg.className = "message red";
     }
-
     updatePrice();
 }
 
@@ -171,9 +166,8 @@ function calculateQuote() {
         alert("Please enter valid rental days.");
         return false;
     }
-    return true;
+    return true; 
 }
 </script>
-<?php endif; ?>
 </body>
 </html>
