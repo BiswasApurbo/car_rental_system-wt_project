@@ -1,173 +1,137 @@
 <?php
-$name = $licenseNo = $seat = $mirror = "";
-$nameError = $licenseError = $seatError = $mirrorError = "";
-$successMessage = "";
+session_start();
+require_once('../model/userModel.php');
+require_once('../model/customerModel.php');
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'] ?? '';
-    $licenseNo = $_POST['licenseNo'] ?? '';
-    $seat = $_POST['seat'] ?? '';
-    $mirror = $_POST['mirror'] ?? '';
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    header('location: ../view/login.php?error=badrequest');
+    exit;
+}
 
-    $isValid = true;
-    
-    if (empty($name)) {
-        $nameError = "Please fill up the name.";
-        $isValid = false;
-    }
-    if (empty($licenseNo)) {
-        $licenseError = "Please enter license number.";
-        $isValid = false;
-    }
-    if (empty($seat)) {
-        $seatError = "Please select seat preference.";
-        $isValid = false;
-    }
-    if (empty($mirror)) {
-        $mirrorError = "Please select mirror preference.";
-        $isValid = false;
+function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+
+$currentUsername = $_SESSION['username'] ?? '';
+$user = getUserByName($currentUsername);
+if (!$user) {
+    header('location: ../view/login.php?error=badrequest');
+    exit;
+}
+$userId = (int)$user['id'];
+
+$profile = getCustomerProfile($userId);
+
+$name       = $profile['full_name']   ?? '';
+$licenseNo  = $profile['license_no']  ?? '';
+$seat       = $profile['seat_pref']   ?? '';
+$mirror     = $profile['mirror_pref'] ?? '';
+$licenseFile= $profile['license_file']?? '';
+
+$errors  = [];
+$success = '';
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $name      = trim($_POST['name'] ?? '');
+    $licenseNo = trim($_POST['licenseNo'] ?? '');
+    $seat      = $_POST['seat']   ?? '';
+    $mirror    = $_POST['mirror'] ?? '';
+
+    if ($name === '') $errors['name'] = 'Please fill up the name.';
+    if ($licenseNo === '') $errors['licenseNo'] = 'Please enter license number.';
+    if ($seat === '') $errors['seat'] = 'Please select seat preference.';
+    if ($mirror === '') $errors['mirror'] = 'Please select mirror preference.';
+
+    $newFilePath = null;
+    if (!empty($_FILES['license']['tmp_name'])) {
+        $ext = strtolower(pathinfo($_FILES['license']['name'], PATHINFO_EXTENSION));
+        if (in_array($ext, ['jpg','jpeg','png','pdf'])) {
+            $fileName = 'license_'.$userId.'_'.time().'.'.$ext;
+            $destPath = '../asset/uploads/'.$fileName;
+            if (move_uploaded_file($_FILES['license']['tmp_name'], $destPath)) {
+                $newFilePath = 'asset/uploads/'.$fileName;
+            } else {
+                $errors['file'] = 'File upload failed.';
+            }
+        } else {
+            $errors['file'] = 'Only JPG, PNG, PDF allowed.';
+        }
     }
 
-    if ($isValid) {
-        $successMessage = "Preferences saved successfully!";
+    if (empty($errors)) {
+        if ($profile) {
+            updateCustomerProfile($userId, $name, $licenseNo, $seat, $mirror, $newFilePath);
+        } else {
+            insertCustomerProfile($userId, $name, $licenseNo, $seat, $mirror, $newFilePath);
+        }
+        $success = 'Preferences saved successfully!';
+        $profile = getCustomerProfile($userId);
+        $licenseFile = $profile['license_file'];
     }
 }
-?>
 
+$history = getRentalHistory($userId);
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Profiles</title>
-    <link rel="stylesheet" href="../asset/ad.css">
+  <meta charset="UTF-8">
+  <title>Customer Profile</title>
+  <link rel="stylesheet" href="../asset/ad.css">
+  <style>.error{color:red;font-weight:bold}.success{color:green;font-weight:bold}</style>
 </head>
 <body>
-    <h2>Customer Profiles</h2>
+<div class="admin-card">
+  <h1>Customer Profile</h1>
 
-    <form method="POST" onsubmit="return false;">
-        <fieldset>
-            <legend>Driver License Scanner</legend>
+  <?php if ($success): ?><div class="success"><?= h($success) ?></div><?php endif; ?>
+  <?php foreach ($errors as $e): ?><div class="error"><?= h($e) ?></div><?php endforeach; ?>
 
-            <label for="license">Upload License:</label>
-            <input type="file" id="license" name="license" accept=".jpg,.png,.pdf"><br><br>
+  <form method="POST" enctype="multipart/form-data">
+    <fieldset>
+      <label>Upload License:</label>
+      <input type="file" name="license"><br>
+      <?php if ($licenseFile): ?>
+        Current: <a href="../<?= h($licenseFile) ?>" target="_blank">View</a><br>
+      <?php endif; ?>
+      <label>Full Name:</label>
+      <input type="text" name="name" value="<?= h($name) ?>"><br>
+      <label>License No:</label>
+      <input type="text" name="licenseNo" value="<?= h($licenseNo) ?>"><br>
+      <label>Seat Position:</label>
+      <select name="seat">
+        <option value="">--Select--</option>
+        <?php foreach (['Front-Left','Front-Right','Back-Left','Back-Right'] as $opt): ?>
+          <option value="<?= h($opt) ?>" <?= ($seat===$opt)?'selected':'' ?>><?= h($opt) ?></option>
+        <?php endforeach; ?>
+      </select><br>
+      <label>Mirror Position:</label>
+      <select name="mirror">
+        <option value="">--Select--</option>
+        <?php foreach (['Standard','Wide Angle','Blind Spot Adjusted'] as $opt): ?>
+          <option value="<?= h($opt) ?>" <?= ($mirror===$opt)?'selected':'' ?>><?= h($opt) ?></option>
+        <?php endforeach; ?>
+      </select><br>
+      <button type="submit">Save Preferences</button>
+    </fieldset>
+  </form>
 
-            <input type="button" value="Scan & Autofill" onclick="scanLicense()"><br><br>
+  <fieldset>
+    <legend>Rental History</legend>
+    <?php if (!$history): ?>
+      <p>No rentals yet.</p>
+    <?php else: ?>
+      <ul>
+        <?php foreach ($history as $hrow): ?>
+          <li>
+            <?= h($hrow['make'].' '.$hrow['model']) ?> — 
+            <?= h($hrow['pickup_date']) ?> to <?= h($hrow['return_date']) ?> 
+            (Booking #<?= (int)$hrow['booking_id'] ?>, <?= h($hrow['status']) ?>)
+          </li>
+        <?php endforeach; ?>
+      </ul>
+    <?php endif; ?>
+  </fieldset>
 
-            <label for="name">Full Name:</label>
-            <input type="text" id="name" name="name" value="<?php echo htmlspecialchars($name); ?>"><br>
-            <span class="error-message" id="nameError"><?php echo $nameError; ?></span><br>
-
-            <label for="licenseNo">License No:</label>
-            <input type="text" id="licenseNo" name="licenseNo" value="<?php echo htmlspecialchars($licenseNo); ?>"><br>
-            <span class="error-message" id="licenseError"><?php echo $licenseError; ?></span><br>
-        </fieldset>
-
-        <fieldset>
-            <legend>Preference Center</legend>
-
-            <label for="seat">Seat Position:</label>
-            <select id="seat" name="seat">
-                <option value="">--Select--</option>
-                <option value="Front-Left" <?php echo ($seat == 'Front-Left') ? 'selected' : ''; ?>>Front-Left</option>
-                <option value="Front-Right" <?php echo ($seat == 'Front-Right') ? 'selected' : ''; ?>>Front-Right</option>
-                <option value="Back-Left" <?php echo ($seat == 'Back-Left') ? 'selected' : ''; ?>>Back-Left</option>
-                <option value="Back-Right" <?php echo ($seat == 'Back-Right') ? 'selected' : ''; ?>>Back-Right</option>
-            </select><br>
-            <span class="error-message" id="seatError"><?php echo $seatError; ?></span><br>
-
-            <label for="mirror">Mirror Position:</label>
-            <select id="mirror" name="mirror">
-                <option value="">--Select--</option>
-                <option value="Standard" <?php echo ($mirror == 'Standard') ? 'selected' : ''; ?>>Standard</option>
-                <option value="Wide Angle" <?php echo ($mirror == 'Wide Angle') ? 'selected' : ''; ?>>Wide Angle</option>
-                <option value="Blind Spot Adjusted" <?php echo ($mirror == 'Blind Spot Adjusted') ? 'selected' : ''; ?>>Blind Spot Adjusted</option>
-            </select><br>
-            <span class="error-message" id="mirrorError"><?php echo $mirrorError; ?></span><br><br>
-
-            <input type="button" value="Save Preferences" onclick="savePreferences()">
-        </fieldset>
-
-        <fieldset>
-            <legend>Rental History</legend>
-            <ul>
-                <li>Honda City - Jan 2024 (Receipt #12345)</li>
-                <li>Toyota Fortuner - May 2024 (Receipt #67890)</li>
-                <li>Hyundai H1 - July 2024 (Receipt #24680)</li>
-            </ul>
-        </fieldset>
-
-        <fieldset>
-            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php';">
-        </fieldset>
-    </form>
-
-
-    <div id="savedPreferences" style="display:none;">
-        <h3>Saved Preferences:</h3>
-        <p id="savedName"></p>
-        <p id="savedSeat"></p>
-        <p id="savedMirror"></p>
-    </div>
-
-    <script>
-        function scanLicense() {
-            const file = document.getElementById('license').files[0];
-            
-            clearErrors();
-
-            if (!file) {
-                document.getElementById('licenseError').innerText = "Please upload a license file.";
-                return;
-            }
-
-            document.getElementById('name').value = "John Doe";
-            document.getElementById('licenseNo').value = "DL-0987654321";
-            document.getElementById('license').value = ''; 
-            document.getElementById('licenseError').innerText = '';
-        }
-
-        function savePreferences() {
-            const name = document.getElementById('name').value.trim();
-            const licenseNo = document.getElementById('licenseNo').value.trim();
-            const seat = document.getElementById('seat').value;
-            const mirror = document.getElementById('mirror').value;
-
-            let isValid = true;
-            clearErrors();
-
-            if (name === "") {
-                document.getElementById('nameError').innerText = "Please fill up the name.";
-                isValid = false;
-            }
-            if (licenseNo === "") {
-                document.getElementById('licenseError').innerText = "Please enter license number.";
-                isValid = false;
-            }
-            if (seat === "") {
-                document.getElementById('seatError').innerText = "Please select seat preference.";
-                isValid = false;
-            }
-            if (mirror === "") {
-                document.getElementById('mirrorError').innerText = "Please select mirror preference.";
-                isValid = false;
-            }
-
-            if (isValid) {
-                document.getElementById('savedName').innerText = "Full Name: " + name;
-                document.getElementById('savedSeat').innerText = "Seat Position: " + seat;
-                document.getElementById('savedMirror').innerText = "Mirror Position: " + mirror;
-
-                document.getElementById('savedPreferences').style.display = 'block';
-            }
-        }
-
-        function clearErrors() {
-            document.getElementById('nameError').innerText = "";
-            document.getElementById('licenseError').innerText = "";
-            document.getElementById('seatError').innerText = "";
-            document.getElementById('mirrorError').innerText = "";
-        }
-    </script>
+  <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'">
+</div>
 </body>
 </html>

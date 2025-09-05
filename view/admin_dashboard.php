@@ -47,6 +47,8 @@ if (strtolower($_SESSION['role']) !== 'admin') {
             <legend>Quick Actions</legend>
             <input type="button" value="Role Assignment" onclick="window.location.href='role_assignment.php'" />
             <input type="button" value="Export Data" onclick="window.location.href='export.php'" />
+            <input type="button" value="Search Filter" onclick="window.location.href='search_filter.php'" />
+            <input type="button" value="Pages" onclick="window.location.href='pagination.php'" />
             <input type="button" value="Panel" onclick="window.location.href='admin_panel.php'" />
             <input type="button" value="Logout" onclick="window.location.href='../controller/logout.php'" />
         </fieldset>

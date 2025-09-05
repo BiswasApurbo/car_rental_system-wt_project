@@ -1,169 +1,175 @@
 <?php
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $pickupDate = $_POST['pickup'] ?? '';
-    $returnDate = $_POST['return'] ?? '';
-    $pickupTime = $_POST['time'] ?? '';
+session_start();
+require_once('../model/userModel.php');        
+require_once('../model/bookingModel.php');     
+
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
+        $_SESSION['status'] = true;
+        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
+            $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+        if (!isset($_SESSION['role']) && isset($_COOKIE['remember_role'])) {
+            $c = strtolower(trim((string)$_COOKIE['remember_role']));
+            $_SESSION['role'] = ($c === 'admin') ? 'Admin' : 'User';
+        }
+    } else {
+        header('location: ../view/login.php?error=badrequest');
+        exit;
+    }
+}
+
+function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+
+$vehicleId   = isset($_GET['vehicle_id']) ? (int)$_GET['vehicle_id'] : 0; 
+$pickupDate  = $_POST['pickup'] ?? '';
+$returnDate  = $_POST['return'] ?? '';
+$pickupTime  = $_POST['time'] ?? '';
+
+$errors = ['vehicle'=>'','pickup'=>'','return'=>'','time'=>'','availability'=>'','top'=>''];
+$successMessage = '';
+
+$vehicleRow = ($vehicleId > 0) ? bm_getVehicleById($vehicleId) : null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
     
-    $errors = [];
-    if (empty($pickupDate)) {
-        $errors[] = 'Pickup Date is required.';
-    }
-    if (empty($returnDate)) {
-        $errors[] = 'Return Date is required.';
-    }
-    if (empty($pickupTime)) {
-        $errors[] = 'Pickup Time is required.';
+    if ($vehicleId <= 0 || !$vehicleRow) {
+        $errors['vehicle'] = 'Please select a vehicle from the inventory.';
     }
 
-    if (empty($errors)) {
-        $confirmationMessage = "Booking confirmed successfully! Pickup Date: $pickupDate, Return Date: $returnDate, Pickup Time: $pickupTime";
+    
+    if ($pickupDate === '') {
+        $errors['pickup'] = 'Pickup Date is required.';
+    } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $pickupDate)) {
+        $errors['pickup'] = 'Pickup Date format is invalid (YYYY-MM-DD).';
+    }
+
+    
+    if ($returnDate === '') {
+        $errors['return'] = 'Return Date is required.';
+    } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $returnDate)) {
+        $errors['return'] = 'Return Date format is invalid (YYYY-MM-DD).';
+    }
+
+
+    if ($pickupTime === '') {
+        $errors['time'] = 'Pickup Time is required.';
+    } elseif (!preg_match('/^\d{2}:\d{2}$/', $pickupTime)) {
+        $errors['time'] = 'Pickup Time format is invalid (HH:MM).';
+    }
+
+
+    if ($errors['pickup'] === '' && $errors['return'] === '') {
+        $p = strtotime($pickupDate);
+        $r = strtotime($returnDate);
+        if ($p === false || $r === false) {
+            $errors['top'] = 'Invalid date values.';
+        } else {
+            if ($p > $r) {
+                $errors['return'] = 'Return Date must be on or after Pickup Date.';
+            }
+        
+            $today = strtotime(date('Y-m-d'));
+            if ($p < $today) {
+                $errors['pickup'] = 'Pickup Date cannot be in the past.';
+            }
+        }
+    }
+
+
+    if (!array_filter($errors)) {
+        $available = bm_isVehicleAvailable($vehicleId, $pickupDate, $returnDate);
+        if (!$available) {
+            $errors['availability'] = 'Selected vehicle is not available for the chosen dates.';
+        } else {
+           
+            $userId = 0;
+            if (!empty($_SESSION['username'])) {
+                $userId = bm_getUserIdByUsername($_SESSION['username']);
+            }
+            if ($userId <= 0) {
+                $errors['top'] = 'Unable to resolve current user. Please log in again.';
+            } else {
+               
+                $bookingId = bm_createBooking($userId, $vehicleId, $pickupDate, $returnDate, $pickupTime, 0.0);
+                if ($bookingId === false) {
+                    $errors['top'] = 'Failed to create booking. Please try again.';
+                } else {
+                    $successMessage = 'Booking confirmed! Reference #'.$bookingId.
+                        ' — '.h($vehicleRow['make'].' '.$vehicleRow['model']).
+                        " | Pickup: $pickupDate $pickupTime | Return: $returnDate";
+                
+                }
+            }
+        }
     }
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Booking Calendar</title>
-    <link rel="stylesheet" href="../asset/ad.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Booking Calendar</title>
+  <link rel="stylesheet" href="../asset/ad.css">
+  <style>
+    .card{max-width:900px;margin:18px auto;padding:18px;background:#fff;border-radius:8px;box-shadow:0 0 8px #ddd}
+    fieldset{border:none;padding:0;margin:0 0 12px}
+    label{display:inline-block;min-width:140px;margin-right:8px}
+    input[type="date"],input[type="time"]{padding:6px 8px}
+    .error-message{color:#c0392b;font-weight:600;margin:4px 0 10px;white-space:pre-line}
+    .validation{font-weight:700;margin:8px 0;color:#2e7d32}
+    .btn{display:inline-block;padding:8px 12px;border:1px solid #2c3e50;border-radius:6px;background:#2c3e50;color:#fff;cursor:pointer}
+    .btn.secondary{background:#fff;color:#2c3e50}
+    .muted{color:#666}
+  </style>
+  <script>
+    function setTodayDefaults(){
+      const p = document.getElementById('pickup');
+      const r = document.getElementById('return');
+      const today = new Date().toISOString().slice(0,10);
+      if (!p.value) p.value = today;
+      if (!r.value) r.value = today;
+    }
+    document.addEventListener('DOMContentLoaded', setTodayDefaults);
+  </script>
 </head>
 <body>
-    <h2>Booking Calendar</h2>
-    <form method="POST" action="">
-        <fieldset>
-            <legend>Date & Time Selection</legend>
+<div class="card">
+  <h2>Booking Calendar</h2>
 
-            <label for="pickup">Pickup Date:</label>
-            <input type="date" id="pickup" name="pickup" value="<?php echo isset($pickupDate) ? $pickupDate : ''; ?>"><br>
-            <div id="pickupError" class="error-message">
-                <?php echo isset($errors) && in_array('Pickup Date is required.', $errors) ? 'Pickup Date is required.' : ''; ?>
-            </div>
+  <?php if ($vehicleRow): ?>
+    <p class="muted">Vehicle: <strong><?= h($vehicleRow['make'].' '.$vehicleRow['model']) ?></strong> (ID <?= (int)$vehicleRow['id'] ?>)</p>
+  <?php else: ?>
+    <div class="error-message">No vehicle selected. Go back to <a href="vehicle_inventory.php">Vehicle Inventory</a> and choose one.</div>
+  <?php endif; ?>
 
-            <label for="return">Return Date:</label>
-            <input type="date" id="return" name="return" value="<?php echo isset($returnDate) ? $returnDate : ''; ?>"><br>
-            <div id="returnError" class="error-message">
-                <?php echo isset($errors) && in_array('Return Date is required.', $errors) ? 'Return Date is required.' : ''; ?>
-            </div>
+  <?php if ($errors['top']): ?><div class="error-message"><?= h($errors['top']) ?></div><?php endif; ?>
+  <?php if ($errors['availability']): ?><div class="error-message"><?= h($errors['availability']) ?></div><?php endif; ?>
+  <?php if ($successMessage): ?><div class="validation"><?= $successMessage ?></div><?php endif; ?>
 
-            <label for="time">Pickup Time:</label>
-            <input type="time" id="time" name="time" placeholder="10:00 AM" value="<?php echo isset($pickupTime) ? $pickupTime : ''; ?>"><br>
-            <div id="timeError" class="error-message">
-                <?php echo isset($errors) && in_array('Pickup Time is required.', $errors) ? 'Pickup Time is required.' : ''; ?>
-            </div>
+  <form method="POST" action="">
+    <fieldset>
+      <label for="pickup">Pickup Date:</label>
+      <input type="date" id="pickup" name="pickup" value="<?= h($pickupDate) ?>"><br>
+      <?php if ($errors['pickup']): ?><div class="error-message"><?= h($errors['pickup']) ?></div><?php endif; ?>
 
-            <input type="button" value="Check Rates" onclick="showRateCalendar()">
-        </fieldset>
+      <label for="return">Return Date:</label>
+      <input type="date" id="return" name="return" value="<?= h($returnDate) ?>"><br>
+      <?php if ($errors['return']): ?><div class="error-message"><?= h($errors['return']) ?></div><?php endif; ?>
 
-        <fieldset>
-            <legend>Booking Summary</legend>
-            <input type="button" value="Reserve Now" onclick="showBookingSummary()">
-            <input type="button" value="1-Click Confirm" onclick="confirmBooking()">
-            <input type="button" value="Customer Profile" onclick="window.location.href='customer_profile.php'">
-        </fieldset>
+      <label for="time">Pickup Time:</label>
+      <input type="time" id="time" name="time" value="<?= h($pickupTime) ?>"><br>
+      <?php if ($errors['time']): ?><div class="error-message"><?= h($errors['time']) ?></div><?php endif; ?>
+    </fieldset>
 
-        <div id="bookingSummary" style="display: none;">
-            <h3>Booking Summary:</h3>
-            <ul>
-                <li>Pickup Date: <span id="showPickup"></span></li>
-                <li>Return Date: <span id="showReturn"></span></li>
-                <li>Pickup Time: <span id="showTime"></span></li>
-                <li>Price: <span id="showPrice">3500 tk</span></li>
-            </ul>
-        </div>
-
-        <fieldset>
-            <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'">
-        </fieldset>
-
-        <div id="confirmationMessage">
-            <?php echo isset($confirmationMessage) ? $confirmationMessage : ''; ?>
-        </div>
-    </form>
-
-    <script>
-        function showRateCalendar() {
-            const pickupDate = document.getElementById('pickup').value;
-            const returnDate = document.getElementById('return').value;
-            let isValid = true;
-            document.getElementById('pickupError').innerText = '';
-            document.getElementById('returnError').innerText = '';
-            if (!pickupDate) {
-                document.getElementById('pickupError').innerText = 'Pickup Date is required.';
-                isValid = false;
-            }
-
-            if (!returnDate) {
-                document.getElementById('returnError').innerText = 'Return Date is required.';
-                isValid = false;
-            }
-            if (isValid) {
-                document.getElementById('pickupError').innerText = 'Dynamic Pricing Notice:\n- Weekends have a 15% surcharge.\n- Longer rentals get discounts.';
-            }
-        }
-        function showBookingSummary() {
-            const pickup = document.getElementById('pickup').value;
-            const ret = document.getElementById('return').value;
-            const time = document.getElementById('time').value;
-            let isValid = true;
-
-            document.getElementById('pickupError').innerText = '';
-            document.getElementById('returnError').innerText = '';
-            document.getElementById('timeError').innerText = '';
-
-            if (!pickup) {
-                document.getElementById('pickupError').innerText = 'Pickup Date is required.';
-                isValid = false;
-            }
-
-            if (!ret) {
-                document.getElementById('returnError').innerText = 'Return Date is required.';
-                isValid = false;
-            }
-
-            if (!time) {
-                document.getElementById('timeError').innerText = 'Pickup Time is required.';
-                isValid = false;
-            }
-            if (isValid) {
-                document.getElementById('showPickup').innerText = pickup;
-                document.getElementById('showReturn').innerText = ret;
-                document.getElementById('showTime').innerText = time;
-
-                document.getElementById('bookingSummary').style.display = 'block';
-            }
-        }
-        function confirmBooking() {
-            const pickup = document.getElementById('pickup').value;
-            const ret = document.getElementById('return').value;
-            const time = document.getElementById('time').value;
-            let isValid = true;
-
-            document.getElementById('pickupError').innerText = '';
-            document.getElementById('returnError').innerText = '';
-            document.getElementById('timeError').innerText = '';
-
-            if (!pickup) {
-                document.getElementById('pickupError').innerText = 'Pickup Date is required.';
-                isValid = false;
-            }
-
-            if (!ret) {
-                document.getElementById('returnError').innerText = 'Return Date is required.';
-                isValid = false;
-            }
-
-            if (!time) {
-                document.getElementById('timeError').innerText = 'Pickup Time is required.';
-                isValid = false;
-            }
-            if (isValid) {
-               
-                document.getElementById('confirmationMessage').innerText = '';
-                document.getElementById('confirmationMessage').innerText = "Booking confirmed successfully! Thank you for choosing our service.";
-            }
-        }
-    </script>
+    <fieldset>
+      <button type="submit" class="btn">Confirm Booking</button>
+      <button type="button" class="btn secondary" onclick="window.location.href='vehicle_inventory.php'">Back to Inventory</button>
+      <button type="button" class="btn secondary" onclick="window.location.href='user_dashboard.php'">Back to Dashboard</button>
+    </fieldset>
+  </form>
+</div>
 </body>
 </html>

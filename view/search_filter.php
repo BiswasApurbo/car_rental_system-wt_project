@@ -1,120 +1,118 @@
 <?php
-// Sample data that would normally come from a database
-$sampleData = [
-    ['name' => 'Car 1', 'category' => 'Vehicles', 'status' => 'Active'],
-    ['name' => 'User 1', 'category' => 'Users', 'status' => 'Inactive'],
-    ['name' => 'Booking 1', 'category' => 'Bookings', 'status' => 'Pending'],
-    ['name' => 'Car 2', 'category' => 'Vehicles', 'status' => 'Active'],
-    ['name' => 'User 2', 'category' => 'Users', 'status' => 'Active']
-];
+session_start();
+require_once('../model/userModel.php');
+require_once('../model/searchModel.php');
 
-// Get filter values from the form (if any)
-$query = isset($_POST['searchBox']) ? strtolower($_POST['searchBox']) : '';
-$category = isset($_POST['categoryFilter']) ? $_POST['categoryFilter'] : 'All';
-$status = isset($_POST['statusFilter']) ? $_POST['statusFilter'] : 'All';
+if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
+    if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
+        $_SESSION['status'] = true;
+        if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
+            $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+        if (!isset($_SESSION['role']) && isset($_COOKIE['remember_role'])) {
+            $c = strtolower(trim((string)$_COOKIE['remember_role']));
+            $_SESSION['role'] = ($c === 'admin') ? 'Admin' : 'User';
+        }
+    } else {
+        header('location: ../view/login.php?error=badrequest');
+        exit;
+    }
+}
 
-// Filter the data based on selected category, status, and search query
-$filteredData = array_filter($sampleData, function($item) use ($query, $category, $status) {
-    return (
-        ($category == 'All' || $item['category'] == $category) &&
-        ($status == 'All' || $item['status'] == $status) &&
-        (strpos(strtolower($item['name']), $query) !== false)
-    );
-});
+function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+
+$q        = trim($_POST['searchBox'] ?? '');
+$category = $_POST['categoryFilter'] ?? 'All';
+$status   = $_POST['statusFilter'] ?? 'All';
+
+$allowedCategories = ['All','Vehicles','Users','Bookings'];
+if (!in_array($category, $allowedCategories, true)) $category = 'All';
+
+$vehicleStatuses  = ['Available','Rented','Maintenance','Inactive'];
+$bookingStatuses  = ['Pending','Confirmed','PickedUp','Returned','Cancelled'];
+
+$allowedStatusAny = ['All'];
+if ($category === 'Vehicles') {
+    $allowedStatusAny = array_merge(['All'], $vehicleStatuses);
+} elseif ($category === 'Bookings') {
+    $allowedStatusAny = array_merge(['All'], $bookingStatuses);
+} elseif ($category === 'Users') {
+    $allowedStatusAny = ['All'];
+} else {
+    $allowedStatusAny = array_merge(['All'], $vehicleStatuses, $bookingStatuses);
+}
+if (!in_array($status, $allowedStatusAny, true)) $status = 'All';
+
+if (mb_strlen($q) > 80) $q = mb_substr($q, 0, 80); 
+
+$results = search_all($q, $category, $status, 50);
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search & Filter</title>
-    <link rel="stylesheet" type="text/css" href="../asset/ad.css">
-    <script>
-        function liveSearch() {
-            var query = document.getElementById('searchBox').value.toLowerCase();
-            var category = document.getElementById('categoryFilter').value;
-            var status = document.getElementById('statusFilter').value;
-            var resultsList = document.getElementById('resultsList');
-
-            // Perform the search with PHP (re-rendering will be done after form submit)
-            resultsList.innerHTML = '';
-
-            if (query || category !== 'All' || status !== 'All') {
-                <?php
-                // Display the filtered data here using PHP
-                if (count($filteredData) > 0) {
-                    foreach ($filteredData as $item) {
-                        echo "<li>{$item['name']} - {$item['category']} - {$item['status']}</li>";
-                    }
-                } else {
-                    echo "<li>No results found</li>";
-                }
-                ?>
-            }
-        }
-
-        function applyFilters() {
-            liveSearch();
-        }
-
-        function clearFilters() {
-            // Clear the search box and reset dropdowns to 'All'
-            document.getElementById('searchBox').value = '';
-            document.getElementById('categoryFilter').value = 'All';
-            document.getElementById('statusFilter').value = 'All';
-            // Call liveSearch to update results based on cleared filters
-            liveSearch();
-        }
-    </script>
+  <meta charset="UTF-8">
+  <title>Search & Filter</title>
+  <link rel="stylesheet" href="../asset/ad.css">
+  <style>
+    .card{max-width:1000px;margin:18px auto;padding:18px;background:#fff;border-radius:8px;box-shadow:0 0 8px #ddd}
+    fieldset{border:none;padding:0;margin:0 0 12px}
+    label{display:inline-block;min-width:110px}
+    input[type="text"],select{padding:6px 8px}
+    ul.results{list-style:none;padding-left:0}
+    ul.results li{border:1px solid #e1e1e1;border-radius:8px;padding:10px;margin:8px 0}
+    .muted{color:#666}
+  </style>
 </head>
 <body>
-    <h1>Search & Filter</h1>
-    <form method="POST" action="">
-        <fieldset>
-            <legend>Search & Filter</legend>
-            <label for="searchBox">Search:</label>
-            <input type="text" id="searchBox" name="searchBox" placeholder="Type keyword..." value="<?php echo isset($query) ? htmlspecialchars($query) : ''; ?>" onkeyup="liveSearch()">
-            
-            <label for="categoryFilter">Category:</label>
-            <select id="categoryFilter" name="categoryFilter" onchange="applyFilters()">
-                <option value="All" <?php echo ($category == 'All') ? 'selected' : ''; ?>>All</option>
-                <option value="Vehicles" <?php echo ($category == 'Vehicles') ? 'selected' : ''; ?>>Vehicles</option>
-                <option value="Users" <?php echo ($category == 'Users') ? 'selected' : ''; ?>>Users</option>
-                <option value="Bookings" <?php echo ($category == 'Bookings') ? 'selected' : ''; ?>>Bookings</option>
-            </select>
-            
-            <label for="statusFilter">Status:</label>
-            <select id="statusFilter" name="statusFilter" onchange="applyFilters()">
-                <option value="All" <?php echo ($status == 'All') ? 'selected' : ''; ?>>All</option>
-                <option value="Active" <?php echo ($status == 'Active') ? 'selected' : ''; ?>>Active</option>
-                <option value="Inactive" <?php echo ($status == 'Inactive') ? 'selected' : ''; ?>>Inactive</option>
-                <option value="Pending" <?php echo ($status == 'Pending') ? 'selected' : ''; ?>>Pending</option>
-            </select>
-        </fieldset>
+<div class="card">
+  <h1>Search & Filter</h1>
 
-        <!-- Clear Filter Button -->
-        <input type="button" value="Clear Filters" onclick="clearFilters()">
-    </form>
+  <form method="POST" action="">
+    <fieldset>
+      <label for="searchBox">Search:</label>
+      <input type="text" id="searchBox" name="searchBox" placeholder="Type keyword..." value="<?= h($q) ?>">
 
-    <h2>Results:</h2>
-    <ul id="resultsList">
-        <?php
-        // Display filtered results if available
-        if (count($filteredData) > 0) {
-            foreach ($filteredData as $item) {
-                echo "<li>{$item['name']} - {$item['category']} - {$item['status']}</li>";
-            }
-        } else {
-            echo "<li>No results found</li>";
-        }
-        ?>
+      <label for="categoryFilter">Category:</label>
+      <select id="categoryFilter" name="categoryFilter">
+        <?php foreach ($allowedCategories as $c): ?>
+          <option value="<?= h($c) ?>" <?= ($category===$c)?'selected':'' ?>><?= h($c) ?></option>
+        <?php endforeach; ?>
+      </select>
+
+      <label for="statusFilter">Status:</label>
+      <select id="statusFilter" name="statusFilter">
+        <?php foreach ($allowedStatusAny as $s): ?>
+          <option value="<?= h($s) ?>" <?= ($status===$s)?'selected':'' ?>><?= h($s) ?></option>
+        <?php endforeach; ?>
+      </select>
+
+      <button type="submit">Apply</button>
+      <button type="button" onclick="window.location.href='search_filter.php'">Clear</button>
+    </fieldset>
+  </form>
+
+  <h2>Results</h2>
+  <?php if (count($results) === 0): ?>
+    <div class="muted">No results found.</div>
+  <?php else: ?>
+    <ul class="results">
+      <?php foreach ($results as $r): ?>
+        <li>
+          <strong><?= h($r['name']) ?></strong>
+          <div class="muted">
+            <?= h($r['category']) ?> • <?= h($r['status']) ?><?= $r['extra'] ? ' • '.h($r['extra']) : '' ?>
+            <?php if (!empty($r['link']) && $r['link'] !== '#'): ?>
+              • <a href="<?= h($r['link']) ?>">Open</a>
+            <?php endif; ?>
+          </div>
+        </li>
+      <?php endforeach; ?>
     </ul>
+  <?php endif; ?>
 
-    <form>
-        <fieldset>
-            <input type="button" value="Back to Admin Panel" onclick="window.location.href='admin_panel.html'">
-        </fieldset>
-    </form>
+  <form><fieldset>
+    <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'">
+  </fieldset></form>
+</div>
 </body>
 </html>
