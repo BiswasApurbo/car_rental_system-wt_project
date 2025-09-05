@@ -1,23 +1,27 @@
 <?php
 session_start();
-header('Cache-Control: no-store, no-cache, must-revalidate');
-header('Pragma: no-cache');
+require_once('../model/userModel.php');
 if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
-    if (isset($_COOKIE['status']) && $_COOKIE['status'] === '1') {
+    if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
         $_SESSION['status'] = true;
         if (!isset($_SESSION['username']) && isset($_COOKIE['remember_user'])) {
             $_SESSION['username'] = $_COOKIE['remember_user'];
+        }
+        if (!isset($_SESSION['role']) && isset($_COOKIE['remember_role'])) {
+            $c = strtolower(trim((string)$_COOKIE['remember_role']));
+            $_SESSION['role'] = ($c === 'admin') ? 'Admin' : 'User';
         }
     } else {
         header('location: ../view/login.php?error=badrequest');
         exit;
     }
 }
-if (($_SESSION['role'] ?? '') !== 'admin') {
+if (strtolower($_SESSION['role']) !== 'admin') {
     header('location: ../view/login.php?error=badrequest');
     exit;
 }
 ?>
+
 <html>
 <head>
     <title>Admin Dashboard</title>

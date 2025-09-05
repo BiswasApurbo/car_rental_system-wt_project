@@ -12,31 +12,8 @@ if (isset($_GET['error'])) {
 }
 
 $phpErrU = $phpErrP = "";
-$username = $password = "";
+$username = "";
 $rememberChecked = false;
-
-if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $username = trim($_POST['username'] ?? '');
-    $password = trim($_POST['password'] ?? '');
-    $rememberChecked = isset($_POST['remember']) && $_POST['remember'] === '1';
-
-    if ($username === "") {
-        $phpErrU = "Please type username!";
-    }
-    if ($password === "") {
-        $phpErrP = "Please type password!";
-    }
-
-    if ($phpErrU === "" && $phpErrP === "") {
-        $_SESSION['pending_login'] = [
-            'username' => $username,
-            'password' => $password,
-            'remember' => $rememberChecked ? '1' : '0'
-        ];
-        header('Location: ../controller/loginCheck.php');
-        exit;
-    }
-}
 ?>
 <!DOCTYPE html>
 <html>
@@ -48,7 +25,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <body>
 <h1>Login Page</h1>
 
-<form method="post" action="" enctype="multipart/form-data" onsubmit="return loginCheck()">
+<?php
+    if (isset($_GET['success']) && $_GET['success'] === 'registered') {
+        echo '<p style="text-align:center; font-weight:bold; color:green; margin:8px 0 12px;">Registration successful! Please login.</p>';
+    }
+?>
+
+<form method="post" action="../controller/loginCheck.php" enctype="multipart/form-data" onsubmit="return loginCheck()">
 <fieldset>
     <?php if ($err2) { ?>
         <p style="color:red; font-weight:bold;"><?= htmlspecialchars($err2) ?></p>
@@ -82,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 <div style="display:flex; justify-content:center; gap:15px; margin-top:10px;">
     <input type="button" 
            value="Forgot Password" 
-           onclick="window.location.href='forgot.html.php'">
+           onclick="window.location.href='forgot.php'">
 
     <input type="button" 
            value="Sign Up" 

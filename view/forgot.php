@@ -11,7 +11,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $error = 'Please enter a valid email!';
     } else {
-        // TODO: Implement actual reset logic (e.g., send reset link)
         $success = 'A reset link has been sent to your email!';
     }
 }
