@@ -1,6 +1,8 @@
 <?php
 session_start();
+require_once '../model/PricingModel.php';
 
+$model = new PricingModel();
 $quote = null;
 $error = "";
 
@@ -20,6 +22,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tax = 0.1 * $baseFee;
         $total = $baseFee + $tax - $discountAmount;
 
+        
+        $userId = $_SESSION['user_id'] ?? 1; 
+        $model->addQuote(
+            $userId, 
+            intval($days), 
+            $promo ?: null, 
+            $discountPercent, 
+            $discountAmount, 
+            $baseFee, 
+            $tax, 
+            $total
+        );
+
         $_SESSION['quote'] = [
             'days'            => $days,
             'promo'           => $promo,
@@ -33,7 +48,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quote = $_SESSION['quote'];
     }
 
-    
     if ($quote) {
         echo "<h2>Quote Generated Successfully!</h2>";
         echo "<p>Rental Days: ".htmlspecialchars($quote['days'])."</p>";
@@ -41,10 +55,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         echo "<p>Base Fee: TK".number_format($quote['baseFee'],2)."</p>";
         echo "<p>Tax (10%): TK".number_format($quote['tax'],2)."</p>";
         echo "<p>Discount: TK".number_format($quote['discountAmount'],2)."</p>";
-        echo "<p><strong>Total: TK".number_format($quote['total'],2)."</strong></p>";
+        echo "<p><strong>Total: TK".number_format($quote['total'],2)."</strong></p><br>";
 
-        echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-        echo ' <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+        echo '<input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;"> ';
+        echo '<input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
 
         exit; 
     }
@@ -90,7 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <p><strong>Total: <span id="total">TK0.00</span></strong></p>
 
     <input type="hidden" name="totalAmount" id="totalAmount"/>
-    <input type="submit" value="Get Quote"/> <br> <br>
+    <input type="submit" value="Get Quote"/> <br><br>
     <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
     <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
 </form>
@@ -157,7 +171,7 @@ function calculateQuote() {
         alert("Please enter valid rental days.");
         return false;
     }
-    return true; 
+    return true;
 }
 </script>
 <?php endif; ?>

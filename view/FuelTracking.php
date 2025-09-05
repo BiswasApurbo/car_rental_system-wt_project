@@ -1,19 +1,23 @@
 <?php
 session_start();
+require_once "../model/FuelModel.php";
+
+$model = new FuelModel();
+$user_id = $_SESSION['user_id'] ?? 1;
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $fuelLevel = $_POST['fuelLevel'] ?? '';
     $refuelLiters = $_POST['refuelLiters'] ?? '';
 
     if ($fuelLevel === '' || $refuelLiters === '' || !isset($_FILES['receiptUpload'])) {
-        die("Please fill all fields and upload receipt.");
+        die("<p style='color:red;'>Please fill all fields and upload receipt.</p>");
     }
 
     if (floatval($fuelLevel) < floatval($refuelLiters)) {
-        die("Error: Fuel level at checkout must be greater than or equal to refuel liters.");
+        die("<p style='color:red;'>Error: Fuel level at checkout must be greater than or equal to refuel liters.</p>");
     }
 
-    $uploadDir = "GasReceiptUploads/";
+    $uploadDir = "../view/GasReceiptUploads/"; 
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
     $file = $_FILES['receiptUpload'];
@@ -21,25 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $filePath = $uploadDir . $fileName;
 
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
-        $_SESSION['fuelRecord'] = [
-            'fuelLevel' => $fuelLevel,
-            'refuelLiters' => $refuelLiters,
-            'receipt' => $filePath,
-            'time' => date('Y-m-d H:i:s')
-        ];
+        $success = $model->addFuelRecord($user_id, $fuelLevel, $refuelLiters, $fileName);
 
-        echo "<h2 style='color:green;'>Fuel record submitted successfully!</h2>";
-        echo "<p>Fuel Level: ".htmlspecialchars($fuelLevel)." liters</p>";
-        echo "<p>Refuel Liters: ".htmlspecialchars($refuelLiters)." liters</p>";
-        echo "<p>Receipt: <a href='".htmlspecialchars($filePath)."' target='_blank'>View Receipt</a></p>";
-
-        echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-        echo ' <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-
-        exit;
+        if ($success) {
+            echo "<h2 style='color:green;'>✅ Fuel record submitted successfully!</h2><br>";
+            echo "<p>Fuel Level: ".htmlspecialchars($fuelLevel)." liters</p>";
+            echo "<p>Refuel Liters: ".htmlspecialchars($refuelLiters)." liters</p>";
+            echo "<p>Receipt: <a href='".htmlspecialchars($filePath)."' target='_blank'>View Receipt</a></p><br>";
+            echo '<input type="button" value="Back to Services" onclick="window.location.href=\'customer_services.php\'" style="margin-right:10px;background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+            echo '<input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
+        } else {
+            echo "<p style='color:red;'>❌ Failed to save fuel record. Try again.</p>";
+        }
     } else {
-        die("Failed to upload receipt.");
+        echo "<p style='color:red;'>❌ Failed to upload receipt.</p>";
     }
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -51,7 +52,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 </head>
 <body>
 <h1>Fuel Tracking</h1>
-
 <div class="container">
 <form id="fuelForm" action="FuelTracking.php" method="POST" onsubmit="return submitFuel()" enctype="multipart/form-data">
     <label>Fuel Level at Checkout (liters):</label>
@@ -67,10 +67,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <input type="file" id="receiptUpload" name="receiptUpload" accept="image/*" />
 
     <p id="formError" style="color:red; font-size:12px;"></p>
-
     <input type="submit" value="Submit Fuel Record" />
-    <br> <br>
-    <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    <br><br>
+    <input type="button" value="Back to Services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
     <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
 </form>
 </div>
@@ -92,22 +91,10 @@ function submitFuel() {
     let valid = true;
     let errorMsg = "";
 
-    if (isNaN(fuelLevel) || fuelLevel < 0) {
-        errorMsg += "Please enter a valid fuel level.\n";
-        valid = false;
-    }
-    if (isNaN(refuelLiters) || refuelLiters <= 0) {
-        errorMsg += "Please enter refuel liters.\n";
-        valid = false;
-    }
-    if (fuelLevel < refuelLiters) {
-        errorMsg += "Fuel level at checkout must be greater than or equal to refuel needed.\n";
-        valid = false;
-    }
-    if (receipt === 0) {
-        errorMsg += "Please upload a gas receipt.\n";
-        valid = false;
-    }
+    if (isNaN(fuelLevel) || fuelLevel < 0) { errorMsg += "Please enter a valid fuel level.\n"; valid = false; }
+    if (isNaN(refuelLiters) || refuelLiters <= 0) { errorMsg += "Please enter refuel liters.\n"; valid = false; }
+    if (fuelLevel < refuelLiters) { errorMsg += "Fuel level at checkout must be greater than or equal to refuel needed.\n"; valid = false; }
+    if (receipt === 0) { errorMsg += "Please upload a gas receipt.\n"; valid = false; }
 
     document.getElementById("formError").textContent = errorMsg;
     return valid;

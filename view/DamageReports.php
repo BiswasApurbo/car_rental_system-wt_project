@@ -1,61 +1,55 @@
 <?php
 session_start();
+require_once "../model/DamageModel.php"; 
+
+$damageModel = new DamageModel();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+
+    $userId = $_SESSION['user_id'] ?? null; 
+    if (!$userId) die("User not logged in.");
+
     $damageMarks = $_POST['damageMarks'] ?? '';
     $signature   = $_POST['signature'] ?? '';
-    $markedPhoto = $_POST['markedPhoto'] ?? '';
+    $vehiclePhotoFile = $_FILES['vehiclePhoto'] ?? null;
 
-    if (empty($_FILES['vehiclePhoto']['name'])) {
-        $error = "Vehicle photo is required.";
-    } elseif (empty($damageMarks)) {
-        $error = "Damage marks are required.";
-    } elseif (empty($signature)) {
-        $error = "Signature is required.";
-    } elseif (empty($markedPhoto)) {
-        $error = "Marked vehicle image is missing.";
+    if (!$vehiclePhotoFile || empty($damageMarks) || empty($signature)) {
+        die("Please fill all fields, mark damage, and provide signature.");
     }
 
-    if (!isset($error)) {
-        $uploadDir = 'CarDamage_uploads/';
-        if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
+    $uploadDir = '../view/CarDamage_uploads/';
+    if (!is_dir($uploadDir)) mkdir($uploadDir, 0777, true);
 
-        $ext       = pathinfo($_FILES['vehiclePhoto']['name'], PATHINFO_EXTENSION);
-        $photoName = uniqid('vehicle_', true) . '.' . strtolower($ext);
-        $photoPath = $uploadDir . $photoName;
-        move_uploaded_file($_FILES['vehiclePhoto']['tmp_name'], $photoPath);
+    $ext = pathinfo($vehiclePhotoFile['name'], PATHINFO_EXTENSION);
+    $vehiclePhotoName = 'vehicle_' . time() . '.' . strtolower($ext);
+    $vehiclePhotoPath = $uploadDir . $vehiclePhotoName;
+    move_uploaded_file($vehiclePhotoFile['tmp_name'], $vehiclePhotoPath);
 
-        $sigData     = preg_replace('#^data:image/\w+;base64,#i', '', $signature);
-        $sigFileName = 'signature_' . time() . '.png';
-        $sigPath     = $uploadDir . $sigFileName;
-        file_put_contents($sigPath, base64_decode($sigData));
+   
+    $markedPhotoData = $_POST['markedPhoto'];
+    $markedPhotoName = 'markedVehicle_' . time() . '.png';
+    $markedPhotoPath = $uploadDir . $markedPhotoName;
+    $markedPhotoData = preg_replace('#^data:image/\w+;base64,#i', '', $markedPhotoData);
+    file_put_contents($markedPhotoPath, base64_decode($markedPhotoData));
 
-        $markedData     = preg_replace('#^data:image/\w+;base64,#i', '', $markedPhoto);
-        $markedFileName = 'markedVehicle_' . time() . '.png';
-        $markedPath     = $uploadDir . $markedFileName;
-        file_put_contents($markedPath, base64_decode($markedData));
+   
+    $signatureData = preg_replace('#^data:image/\w+;base64,#i', '', $signature);
+    $signatureName = 'signature_' . time() . '.png';
+    $signaturePath = $uploadDir . $signatureName;
+    file_put_contents($signaturePath, base64_decode($signatureData));
 
-        $_SESSION['damageReport'] = [
-            'photo'        => $photoName,
-            'markedPhoto'  => $markedFileName,
-            'damageMarks'  => $damageMarks,
-            'signatureFile'=> $sigFileName,
-            'time'         => date('Y-m-d H:i:s')
-        ];
+    
+    if ($damageModel->addDamageReport($userId, $vehiclePhotoName, $markedPhotoName, $damageMarks, $signatureName)) {
+        echo "<h2 style='color:green;'>Damage report submitted successfully!</h2><br>";
+        echo "<p><strong>Original Photo:</strong> <a href='".htmlspecialchars($vehiclePhotoPath)."' target='_blank'>View</a></p>";
+        echo "<p><strong>Marked Vehicle Image:</strong> <a href='".htmlspecialchars($markedPhotoPath)."' target='_blank'>View</a></p>";
+        echo "<p><strong>Signature:</strong> <a href='".htmlspecialchars($signaturePath)."' target='_blank'>View</a></p><br>";
 
-        $successMsg = "Damage report submitted successfully!";
-
-        
-        echo "<h2 style='color:green;'>$successMsg</h2>";
-        echo "<p><strong>Original Photo:</strong> ".htmlspecialchars($photoPath)."</p>";
-        echo "<p><strong>Marked Vehicle Image:</strong> ".htmlspecialchars($markedPath)."</p>";
-        echo "<p><strong>Signature Saved:</strong> ".htmlspecialchars($sigPath)."</p>";
-        echo "<pre>"; print_r($_SESSION['damageReport']); echo "</pre>";
-
-        echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-        echo ' <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-
+        echo '<input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;"> ';
+        echo '<input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
         exit;
+    } else {
+        die("Database insertion failed.");
     }
 }
 ?>
@@ -68,9 +62,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
 <div class="form-wrapper">
-<?php if (!empty($error)): ?>
-    <p style="color:red;"><strong><?= htmlspecialchars($error) ?></strong></p>
-<?php else: ?>
 <form id="damageForm" action="" method="POST" enctype="multipart/form-data" onsubmit="return submitReport()">
     <fieldset>
         <h1>Vehicle Damage Report</h1>
@@ -94,13 +85,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <p id="sigError"></p>
 
         <input type="submit" value="Submit Report">
-        <p id="success"></p> <br> 
-       <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-       <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-
+        <br><br>
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
     </fieldset>
 </form>
-<?php endif; ?>
 </div>
 
 <script>

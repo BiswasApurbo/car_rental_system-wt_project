@@ -1,16 +1,15 @@
 <?php
 session_start();
+require_once '../model/InsuranceModel.php';
+
+$model = new InsuranceModel();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $coverage = $_POST['coverage'] ?? '';
     $claim = $_POST['claim'] ?? '';
 
-    if (empty($coverage)) {
-        die("Please select a coverage tier.");
-    }
-    if (empty($claim)) {
-        die("Please select or enter a claim example.");
-    }
+    if (empty($coverage)) die("Please select a coverage tier.");
+    if (empty($claim)) die("Please select or enter a claim example.");
 
     $coverageData = [
         'basic' => ['deductible'=>5000],
@@ -18,20 +17,23 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         'premium' => ['deductible'=>1000]
     ];
 
-    if (!isset($coverageData[$coverage])) {
-        die("Invalid coverage selected.");
-    }
+    if (!isset($coverageData[$coverage])) die("Invalid coverage selected.");
+
+    $userId = $_SESSION['user_id'] ?? 1;
+    $deductible = $coverageData[$coverage]['deductible'];
+
+    $model->addInsuranceOption($userId, $coverage, $deductible, $claim);
 
     $_SESSION['insurance'] = [
         'tier' => $coverage,
-        'deductible' => $coverageData[$coverage]['deductible'],
+        'deductible' => $deductible,
         'claim' => $claim,
         'time' => date('Y-m-d H:i:s')
     ];
 
     echo "<h2>Insurance Option Confirmed!</h2>";
     echo "<p>Coverage Tier: ".htmlspecialchars($coverage)."</p>";
-    echo "<p>Deductible: TK".$coverageData[$coverage]['deductible']."</p>";
+    echo "<p>Deductible: TK".$deductible."</p>";
     echo "<p>Selected Claim Example: ".htmlspecialchars($claim)."</p>";
 
     echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
@@ -51,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <h1>Insurance Options</h1>
 
 <div class="container">
-    <form id="insuranceForm" action="InsuranceOptions.php" method="POST" onsubmit="return submitInsurance()">
+    <form id="insuranceForm" action="" method="POST" onsubmit="return submitInsurance()">
         <label>Select Coverage Tier:</label>
         <select name="coverage" id="coverage" onchange="updateCoverage()">
             <option value="">-- Select Tier --</option>
@@ -73,10 +75,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </div>
 
         <input type="submit" value="Confirm Option"/>
-        <br> <br>
+        <br><br>
         <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
         <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-
     </form>
 </div>
 
