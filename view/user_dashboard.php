@@ -44,7 +44,6 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
              <input type="button" value="Licence Info" onclick="window.location.href='customer_profile.php'" />
             <input type="button" value="Contact Us" onclick="window.location.href='contact.php'" />
             <input type="button" value="Rent Car" onclick="window.location.href='vehicle_inventory.php'" />
-            <input type="button" value="Damage Report" onclick="window.location.href='DamageReports.php'" />
             <input type="button" value="Notification" onclick="window.location.href='notification.php'" />
             <input type="button" value="Logout" onclick="window.location.href='../controller/logout.php'" />
         </fieldset>
