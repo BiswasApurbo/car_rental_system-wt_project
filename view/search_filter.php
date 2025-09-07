@@ -111,7 +111,7 @@ $results = search_all($q, $category, $status, 50);
   <?php endif; ?>
 
   <form><fieldset>
-    <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'">
+    <input type="button" value="Back to Dashboard" onclick="window.location.href='admin_dashboard.php'">
   </fieldset></form>
 </div>
 </body>

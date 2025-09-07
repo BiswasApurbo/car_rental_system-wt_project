@@ -114,7 +114,7 @@ function q($arr){ return http_build_query($arr); }
     <span class="pager active">Page <?= (int)$page ?> / <?= (int)$totalPages ?> (<?= (int)$total ?> total)</span>
     <a class="pager" href="<?= h(baseUrl().'?'.q(['dataset'=>$dataset,'per'=>$per,'page'=>min($totalPages,$page+1)])) ?>">Next ›</a>
     <a class="pager" href="<?= h(baseUrl().'?'.q(['dataset'=>$dataset,'per'=>$per,'page'=>$totalPages])) ?>">Last ⟶</a>
-    <button type="button" onclick="window.location.href='user_dashboard.php'">Back to Dashboard</button>
+    <button type="button" onclick="window.location.href='admin_dashboard.php'">Back to Dashboard</button>
   </form>
 
   <?php if ($dataset === 'vehicles'): ?>
