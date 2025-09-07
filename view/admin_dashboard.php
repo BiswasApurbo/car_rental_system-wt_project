@@ -20,6 +20,12 @@ if (strtolower($_SESSION['role']) !== 'admin') {
     header('location: ../view/login.php?error=badrequest');
     exit;
 }
+
+// Call the functions from userModel.php
+$totalUsers = getTotalUsers();
+$activeBookings = getActiveBookings();
+$fleetVehicles = getFleetVehicles();
+$pendingDamageReports = getPendingDamageReports();
 ?>
 
 <html>
@@ -33,20 +39,19 @@ if (strtolower($_SESSION['role']) !== 'admin') {
         <fieldset>
             <legend>Summary</legend>
             <label>Total Users:</label>
-            <span class="dashboard-number">12</span><br><br>
+            <span class="dashboard-number"><?php echo $totalUsers; ?></span><br><br>
             <label>Active Bookings:</label>
-            <span class="dashboard-number">5</span><br><br>
+            <span class="dashboard-number"><?php echo $activeBookings; ?></span><br><br>
             <label>Fleet Vehicles:</label>
-            <span class="dashboard-number">20</span><br><br>
+            <span class="dashboard-number"><?php echo $fleetVehicles; ?></span><br><br>
             <label>Pending Damage Reports:</label>
-            <span class="dashboard-number">2</span><br><br>
+            <span class="dashboard-number"><?php echo $pendingDamageReports; ?></span><br><br>
         </fieldset>
     </form>
     <form class="dashboard-form">
         <fieldset>
             <legend>Quick Actions</legend>
             <input type="button" value="Role Assignment" onclick="window.location.href='role_assignment.php'" />
-            <input type="button" value="Export Data" onclick="window.location.href='export.php'" />
             <input type="button" value="Search Filter" onclick="window.location.href='search_filter.php'" />
             <input type="button" value="Pages" onclick="window.location.href='pagination.php'" />
             <input type="button" value="Panel" onclick="window.location.href='admin_panel.php'" />
