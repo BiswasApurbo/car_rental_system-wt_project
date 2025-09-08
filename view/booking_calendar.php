@@ -97,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors['top'] = 'Failed to create booking. Please try again.';
                 } else {
                     $successMessage = 'Booking confirmed! Reference #'.$bookingId.
-                        ' — '.h($vehicleRow['make'].' '.$vehicleRow['model']).
+                        ' — '.h($vehicleRow['make'].' '.$vehicleRow['model']). 
                         " | Pickup: $pickupDate $pickupTime | Return: $returnDate";
                 
                 }
@@ -106,6 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

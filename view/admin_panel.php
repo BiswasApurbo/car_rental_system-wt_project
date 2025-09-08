@@ -116,20 +116,84 @@ if ($roleFilter === 'All') {
         .warn{color:red;font-weight:700}
     </style>
     <script>
+        // Function to apply the role filter using AJAX
         function applyFilter() {
-            document.getElementById('filterForm').submit();
+            let roleFilter = document.getElementById('roleFilter').value;
+            fetchUsers(roleFilter); // Fetch filtered users via AJAX
         }
-        function bulkDelete() {
-            if (confirm("Are you sure you want to delete the selected users?")) {
-                document.getElementById('bulkDeleteForm').submit();
+
+        // Function to fetch users with AJAX and update the table
+        function fetchUsers(roleFilter = 'All') {
+            let xhttp = new XMLHttpRequest();
+            xhttp.open('POST', '../controller/loadUsers.php', true);  // Corrected path
+            xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+            xhttp.send('roleFilter=' + roleFilter);
+
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    let response = JSON.parse(this.responseText);
+                    let userList = document.getElementById('userList');
+                    userList.innerHTML = ''; // Clear the table first
+
+                    if (response.status === 'success') {
+                        response.users.forEach(function(user) {
+                            userList.innerHTML += `<tr>
+                                                        <td><input type='checkbox' name='user_ids[]' value='${user.id}'></td>
+                                                        <td>${user.id}</td>
+                                                        <td>${user.username}</td>
+                                                        <td>${user.email}</td>
+                                                        <td>${user.role}</td>
+                                                        <td class='actions'>
+                                                            <button type='button' onclick='window.location.href="editUser.php?id=${user.id}"'>Edit</button>
+                                                            <button type='button' onclick='deleteUser(${user.id})'>Delete</button>
+                                                        </td>
+                                                    </tr>`;
+                        });
+                    } else {
+                        userList.innerHTML = `<tr><td colspan="6">No users found.</td></tr>`;
+                    }
+                }
+            };
+        }
+
+        // Function to delete a user via AJAX
+        function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                let xhttp = new XMLHttpRequest();
+                xhttp.open('GET', '../controller/deleteUser.php?id=' + userId, true);  // Corrected path
+                xhttp.send();
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        fetchUsers(); // Refresh the user list after deletion
+                    }
+                };
             }
         }
-        function exportCSV() {
-            document.getElementById('exportCSVForm').submit();
+
+        // Function to handle bulk deletion via AJAX
+        function bulkDelete() {
+            let selectedUsers = [];
+            document.querySelectorAll("input[name='user_ids[]']:checked").forEach(function(checkbox) {
+                selectedUsers.push(checkbox.value);
+            });
+
+            if (selectedUsers.length > 0 && confirm("Are you sure you want to delete the selected users?")) {
+                let xhttp = new XMLHttpRequest();
+                xhttp.open('POST', '../controller/bulkDelete.php', true);  // Corrected path
+                xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+                xhttp.send('user_ids=' + JSON.stringify(selectedUsers));
+                xhttp.onreadystatechange = function() {
+                    if (this.readyState == 4 && this.status == 200) {
+                        fetchUsers(); // Refresh the user list after bulk delete
+                    }
+                };
+            } else {
+                alert("Please select at least one user to delete.");
+            }
         }
-        function toggleSelectAll(source) {
-            const checkboxes = document.querySelectorAll("input[name='user_ids[]']");
-            checkboxes.forEach(cb => cb.checked = source.checked);
+
+        window.onload = function() {
+            fetchUsers(); // Load users on page load
         }
     </script>
 </head>
@@ -137,7 +201,8 @@ if ($roleFilter === 'All') {
     <div class="admin-card">
         <h1>Admin Panel - User Management</h1>
 
-        <form id="filterForm" method="POST" action="">
+        <!-- Filter by role -->
+        <form id="filterForm" method="POST" action="" onsubmit="event.preventDefault(); applyFilter();">
             <fieldset class="controls">
                 <label for="roleFilter">Filter by role:</label>
                 <select id="roleFilter" name="roleFilter" onchange="applyFilter()">
@@ -167,24 +232,8 @@ if ($roleFilter === 'All') {
                             <th style="width:18%">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <?php if (count($filteredUsers) > 0): ?>
-                            <?php foreach ($filteredUsers as $user): ?>
-                                <tr>
-                                    <td><input type="checkbox" name="user_ids[]" value="<?= (int)$user['id'] ?>"></td>
-                                    <td><?= h($user['id']) ?></td>
-                                    <td><?= h($user['username']) ?></td>
-                                    <td><?= h($user['email'] ?? '—') ?></td>
-                                    <td><?= h($user['role'] ?? 'User') ?></td>
-                                    <td class="actions">
-                                        <button type="button" onclick="window.location.href='editUser.php?id=<?= (int)$user['id'] ?>'">Edit</button>
-                                        <button type="button" onclick="if(confirm('Delete user <?= h($user['username']) ?>?')){ window.location.href='<?= basename(__FILE__) ?>?deleteUserId=<?= (int)$user['id'] ?>'; }">Delete</button>
-                                    </td>
-                                </tr>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <tr><td colspan="6">No users found.</td></tr>
-                        <?php endif; ?>
+                    <tbody id="userList">
+                        <!-- The user list will be populated dynamically with AJAX -->
                     </tbody>
                 </table>
 

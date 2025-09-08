@@ -34,7 +34,7 @@ function getAlluser(){
     $users = [];
 
     if ($result) {
-        while($row = mysqli_fetch_assoc($result)){
+        while ($row = mysqli_fetch_assoc($result)) {
             $users[] = $row;
         }
     }
