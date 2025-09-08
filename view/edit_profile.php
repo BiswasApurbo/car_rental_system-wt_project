@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once('../model/userModel.php');
+
 if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
     if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
         $_SESSION['status'] = true;
@@ -9,7 +10,7 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
         }
         if (!isset($_SESSION['role']) && isset($_COOKIE['remember_role'])) {
             $c = strtolower(trim((string)$_COOKIE['remember_role']));
-            $_SESSION['role'] = ($c === 'admin') ? 'Admin' : 'User';
+            $_SESSION['role'] = ($c === 'user') ? 'User' : 'Admin';
         }
     } else {
         header('location: ../view/login.php?error=badrequest');
@@ -41,12 +42,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $errors['email'] = 'Please enter valid email!';
     }
 
-    // NEW: check if email already exists for another user
     if (empty($errors['email'])) {
         $allUsers = getAlluser();
         foreach ($allUsers as $u) {
             if (isset($u['email']) && $u['email'] === $email) {
-                // if it's not the current user, it's a collision
                 $otherId = isset($u['id']) ? (int)$u['id'] : 0;
                 if ($otherId !== $id) {
                     $errors['email'] = 'This email is already registered to another user!';
@@ -56,12 +55,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // handle file upload if any
     if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] !== UPLOAD_ERR_NO_FILE) {
         if ($_FILES['avatar']['error'] !== UPLOAD_ERR_OK) {
             $errors['avatar'] = 'Upload failed. Try again.';
         } else {
-            $allowed = ['image/jpeg','image/png','image/gif','image/webp'];
+            $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
             $tmpName = $_FILES['avatar']['tmp_name'];
             $mime = mime_content_type($tmpName);
             if (!in_array($mime, $allowed, true)) {
@@ -93,7 +91,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($avatar !== '') $update['profile'] = $avatar;
         if (updateUser($update)) {
             $success = 'Profile updated!';
-            // reload user
             $user = getUserById($id);
             $name = $user['username'];
             $email = $user['email'];
@@ -129,7 +126,7 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
         <p class="err"><?= h($errors['general']) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="" enctype="multipart/form-data" onsubmit="return editProfileCheck()">
+    <form id="editProfileForm" method="post" enctype="multipart/form-data">
         <fieldset>
             Name:
             <input type="text" id="editName" name="name" value="<?= h($name) ?>" onblur="checkEditName()">
@@ -157,23 +154,30 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
             const name = document.getElementById('editName').value.trim();
             document.getElementById('nameError').innerHTML = name === "" ? "Please enter name!" : "";
         }
+
         function checkEditEmail() {
             const email = document.getElementById('editEmail').value.trim();
             const valid = email !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
             document.getElementById('emailError').innerHTML = valid ? "" : "Please enter valid email!";
         }
-        function editProfileCheck() {
-            checkEditName();
-            checkEditEmail();
-            const nameOk = document.getElementById('nameError').innerHTML === "";
-            const emailOk = document.getElementById('emailError').innerHTML === "";
-            if (nameOk && emailOk) {
-                document.getElementById('saveSuccess').innerHTML = "Submitting…";
-                return true;
-            }
-            document.getElementById('saveSuccess').innerHTML = "";
-            return false;
-        }
+
+        document.getElementById('editProfileForm').onsubmit = function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', '../controller/edit_profile_handler.php', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        document.getElementById('saveSuccess').innerHTML = response.message;
+                    } else {
+                        document.getElementById('saveSuccess').innerHTML = response.message;
+                    }
+                }
+            };
+            xhr.send(formData);
+        };
     </script>
 </body>
 </html>

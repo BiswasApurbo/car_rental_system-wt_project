@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8">
     <title>Reset Password</title>
@@ -29,31 +29,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </head>
 <body>
     <h1>Reset Password</h1>
-    <form method="post" action="" onsubmit="return resetCheck()">
+    <form id="resetPasswordForm">
         <fieldset>
             New Password:
-            <input type="password" id="newPassword" name="new_password" onblur="checkNewPassword()" />
+            <input type="password" id="newPassword" name="new_password" />
             <p id="resetPError" class="err"><?= htmlspecialchars($error) ?></p>
             <input type="submit" value="Reset Password" />
-            <?php if ($success): ?>
-                <p class="ok"><?= htmlspecialchars($success) ?></p>
-            <?php endif; ?>
+            <p id="resetSuccess" class="ok"><?= htmlspecialchars($success) ?></p>
         </fieldset>
         <p><a href="login.php">Back to Login</a></p>
     </form>
+
     <script>
-        function checkNewPassword() {
-            let password = document.getElementById('newPassword').value;
-            if (password.length < 4) {
-                document.getElementById('resetPError').innerHTML = "Password must be at least 4 characters!";
-            } else {
-                document.getElementById('resetPError').innerHTML = "";
+        document.getElementById('resetPasswordForm').onsubmit = function(e) {
+            e.preventDefault();
+            var newPassword = document.getElementById('newPassword').value;
+            
+            if (newPassword.length < 4) {
+                document.getElementById('resetPError').innerText = "Password must be at least 4 characters!";
+                return;
             }
-        }
-        function resetCheck() {
-            checkNewPassword();
-            return document.getElementById('resetPError').innerHTML === "";
-        }
+
+            var formData = new FormData();
+            formData.append('new_password', newPassword);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '../controller/reset_password_handler.php', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        document.getElementById('resetSuccess').innerText = response.message;
+                        document.getElementById('resetPError').innerText = '';
+                    } else {
+                        document.getElementById('resetPError').innerText = response.message;
+                        document.getElementById('resetSuccess').innerText = '';
+                    }
+                }
+            };
+            xhr.send(formData);
+        };
     </script>
 </body>
 </html>

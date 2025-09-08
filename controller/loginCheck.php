@@ -2,26 +2,34 @@
 session_start();
 require_once('../model/userModel.php');
 
-$username = trim($_REQUEST['username'] ?? '');
-$password = trim($_REQUEST['password'] ?? '');
-$remember = isset($_REQUEST['remember']) && $_REQUEST['remember'] === '1';
+$data = file_get_contents("php://input");
+$user = json_decode($data);
 
-if ($username === "" || $password === "") {
-    header('Location: ../view/login.php?error=badrequest');
+if (!$user) {
+    echo json_encode(['status' => 'error', 'message' => 'Invalid JSON data received.']);
     exit;
 }
 
-$user = ['username' => $username, 'password' => $password];
-$status = login($user);
+$username = trim($user->username ?? '');
+$password = trim($user->password ?? '');
+$remember = isset($user->remember) && $user->remember === '1';
+
+if ($username === "" || $password === "") {
+    echo json_encode(['status' => 'error', 'message' => 'Please enter both username and password.']);
+    exit;
+}
+
+$userData = ['username' => $username, 'password' => $password];
+$status = login($userData);
 
 if (!$status) {
-    header('Location: ../view/login.php?error=Invalid_user');
+    echo json_encode(['status' => 'error', 'message' => 'Username/Password is not valid']);
     exit;
 }
 
 $con = getConnection();
 if (!$con) {
-    header('Location: ../view/error500.php');
+    echo json_encode(['status' => 'error', 'message' => 'Database connection error.']);
     exit;
 }
 
@@ -31,17 +39,23 @@ $sql = "SELECT * FROM users WHERE username='{$u_safe}' AND password='{$p_safe}' 
 $result = mysqli_query($con, $sql);
 
 if (!$result) {
-    header('Location: ../view/error500.php');
+    echo json_encode(['status' => 'error', 'message' => 'Database query error.']);
     exit;
 }
 
 $row = mysqli_fetch_assoc($result);
 if (!$row) {
-    header('Location: ../view/login.php?error=Invalid_user');
+    echo json_encode(['status' => 'error', 'message' => 'Username/Password is not valid']);
     exit;
 }
 
-$role = (strtolower(trim((string)($row['role'] ?? ''))) === 'admin') ? 'Admin' : 'User';
+$role = strtolower(trim((string)($row['role'] ?? '')));
+
+if ($role === 'admin') {
+    $_SESSION['role'] = 'admin';
+} else {
+    $_SESSION['role'] = 'user';
+}
 
 session_regenerate_id(true);
 $_SESSION['status']   = true;
@@ -56,11 +70,5 @@ if ($remember) {
     setcookie('remember_role', $_SESSION['role'], $exp, '/');
 }
 
-if (strtolower($_SESSION['role']) === 'admin') {
-    header('Location: ../view/admin_dashboard.php');
-    exit;
-} else {
-    header('Location: ../view/user_dashboard.php');
-    exit;
-}
+echo json_encode(['status' => 'success', 'role' => $role]);
 ?>

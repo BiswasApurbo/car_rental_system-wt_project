@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once('../model/userModel.php');
+
 if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
     if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
         $_SESSION['status'] = true;
@@ -16,12 +17,14 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
         exit;
     }
 }
+
 if (strtolower($_SESSION['role']) !== 'admin') {
     header('location: ../view/login.php?error=badrequest');
     exit;
 }
 
 function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+
 $id = 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
@@ -65,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
     $profilePath = $user['profile'] ?? '';
     if (isset($_FILES['profile']) && $_FILES['profile']['error'] !== UPLOAD_ERR_NO_FILE) {
         if ($_FILES['profile']['error'] !== UPLOAD_ERR_OK) {
@@ -93,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     }
+
     if ($errors['username']==='' && $errors['email']==='' && $errors['profile']==='') {
         $con = getConnection();
         $safeUser = mysqli_real_escape_string($con, $username);
@@ -108,7 +113,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = getUserById($id);
         } else {
             $errors['general'] = 'Update failed. Try again.';
-            error_log("update user failed: " . mysqli_error($con));
         }
     }
 } 
@@ -116,6 +120,7 @@ $formUsername = $user['username'] ?? '';
 $formEmail = $user['email'] ?? '';
 $formProfile = $user['profile'] ?? '';
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -162,12 +167,12 @@ $formProfile = $user['profile'] ?? '';
         <p class="err"><?= h($errors['general']) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="" enctype="multipart/form-data" onsubmit="return editUserCheck()">
+    <form id="editUserForm" method="post" action="" enctype="multipart/form-data">
         <fieldset class="form-fieldset">
             <input type="hidden" name="id" value="<?= (int)$id ?>">
 
             <label>Username:</label>
-            <input type="text" id="username" name="username" value="<?= h($formUsername) ?>" onblur="copyUsernameToEmail()">
+            <input type="text" id="username" name="username" value="<?= h($formUsername) ?>" onblur="checkUsername()">
             <p id="usernameErr" class="err"><?= h($errors['username']) ?></p>
 
             <label>Email:</label>
@@ -188,30 +193,33 @@ $formProfile = $user['profile'] ?? '';
     </form>
 
     <script>
-        function copyUsernameToEmail() {
-            var u = document.getElementById('username').value.trim();
-            var e = document.getElementById('email').value.trim();
-            if (u !== '' && e === '') {
-                document.getElementById('email').value = u;
-            }
-            checkUsername();
-            checkEmail();
-        }
+        document.getElementById('editUserForm').onsubmit = function(e) {
+            e.preventDefault();
+            var formData = new FormData(this);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '../controller/edit_user_handler.php', true);
+            xhr.onload = function() {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.status === 'success') {
+                        alert('User updated successfully!');
+                    } else {
+                        alert(response.message);
+                    }
+                }
+            };
+            xhr.send(formData);
+        };
+
         function checkUsername() {
             var v = document.getElementById('username').value.trim();
             document.getElementById('usernameErr').innerText = v === '' ? 'Please enter username!' : '';
         }
+
         function checkEmail() {
             var v = document.getElementById('email').value.trim();
             var ok = v !== '' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
             document.getElementById('emailErr').innerText = ok ? '' : 'Please enter a valid email!';
-        }
-        function editUserCheck() {
-            checkUsername();
-            checkEmail();
-            var usernameOk = document.getElementById('usernameErr').innerText === '';
-            var emailOk = document.getElementById('emailErr').innerText === '';
-            return usernameOk && emailOk;
         }
     </script>
 </body>

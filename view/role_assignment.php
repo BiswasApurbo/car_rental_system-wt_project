@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once('../model/userModel.php');
+
 if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
     if (isset($_COOKIE['status']) && (string)$_COOKIE['status'] === '1') {
         $_SESSION['status'] = true;
@@ -16,6 +17,7 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
         exit;
     }
 }
+
 if (strtolower($_SESSION['role']) !== 'admin') {
     header('location: ../view/login.php?error=badrequest');
     exit;
@@ -30,7 +32,7 @@ $success = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $role = $_POST['role'] ?? 'User';
-    $allowed = ['User','Admin'];
+    $allowed = ['User', 'Admin'];
 
     if ($username === '') {
         $errorUser = 'Please enter username!';
@@ -61,15 +63,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $role = 'User';
             } else {
                 $errorRole = 'Database update failed. Try again.';
-                error_log("role assignment failed: " . mysqli_error($con));
             }
         }
     }
 }
+
 $usersForTable = getAlluser();
 
-function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
+function h($s) { return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
 ?>
+
 <!DOCTYPE html>
 <html>
 <head>
@@ -95,7 +98,7 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
         <p class="ok" style="text-align:center; font-weight:bold;"><?= $success ?></p>
     <?php endif; ?>
 
-    <form method="post" action="" onsubmit="return assignRoleCheck()">
+    <form id="assignRoleForm" method="post" action="">
         <fieldset class="form-fieldset">
             Username:
             <input type="text" id="username" name="username" placeholder="Enter username" value="<?= h($username) ?>">
@@ -126,14 +129,14 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
                     <th style="width:18%;">Role</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="users-list-body">
                 <?php if (!empty($usersForTable)): ?>
                     <?php foreach ($usersForTable as $u): ?>
-                        <tr>
+                        <tr id="user-<?= h($u['id']) ?>">
                             <td><?= h($u['id']) ?></td>
                             <td><?= h($u['username']) ?></td>
                             <td><?= h($u['email'] ?? '—') ?></td>
-                            <td><?= h($u['role'] ?? 'User') ?></td>
+                            <td id="role-<?= h($u['id']) ?>"><?= h($u['role'] ?? 'User') ?></td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
@@ -146,32 +149,60 @@ function h($s){ return htmlspecialchars($s ?? '', ENT_QUOTES, 'UTF-8'); }
     </div>
 
     <script>
-        function assignRoleCheck() {
-            const u = document.getElementById('username').value.trim();
-            const r = document.getElementById('role').value;
-            let ok = true;
+        document.getElementById('assignRoleForm').onsubmit = function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value.trim();
+            const role = document.getElementById('role').value;
+            const userError = document.getElementById('userError');
+            const roleError = document.getElementById('roleError');
+            const assignSuccess = document.getElementById('assignSuccess');
 
-            if (u === '') {
-                document.getElementById('userError').innerHTML = 'Please enter username!';
-                ok = false;
+            let valid = true;
+
+            if (username === '') {
+                userError.innerText = 'Please enter username!';
+                valid = false;
             } else {
-                document.getElementById('userError').innerHTML = '';
+                userError.innerText = '';
             }
 
-            if (!['User','Admin'].includes(r)) {
-                document.getElementById('roleError').innerHTML = 'Invalid role selected!';
-                ok = false;
+            if (!['User', 'Admin'].includes(role)) {
+                roleError.innerText = 'Invalid role selected!';
+                valid = false;
             } else {
-                document.getElementById('roleError').innerHTML = '';
+                roleError.innerText = '';
             }
 
-            if (ok) {
-                document.getElementById('assignSuccess').innerHTML = 'Submitting…';
-            } else {
-                document.getElementById('assignSuccess').innerHTML = '';
+            if (valid) {
+                const formData = new FormData();
+                formData.append('username', username);
+                formData.append('role', role);
+
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', '../controller/role_assignment_handler.php', true);
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.status === 'success') {
+                            assignSuccess.innerText = response.message;
+                            assignSuccess.style.color = 'green';
+
+                            const updatedUserRow = document.getElementById(`user-${response.id}`);
+                            if (updatedUserRow) {
+                                const roleCell = updatedUserRow.querySelector('td#role-' + response.id);
+                                if (roleCell) {
+                                    roleCell.innerText = response.newRole;
+                                }
+                            }
+                        } else {
+                            userError.innerText = response.message;
+                            assignSuccess.innerText = '';
+                        }
+                    }
+                };
+                xhr.send(formData);
             }
-            return ok;
-        }
+        };
     </script>
 </body>
 </html>
