@@ -54,7 +54,6 @@ $loyaltyPoints = getLoyaltyPoints($userId);
     </script>
 </head>
 <body>
-
 <h1>User Dashboard</h1>
 
 <form class="dashboard-form">
@@ -77,9 +76,9 @@ $loyaltyPoints = getLoyaltyPoints($userId);
         <input type="button" value="Contact Us" onclick="window.location.href='contact.php'" />
         <input type="button" value="Rent Car" onclick="window.location.href='vehicle_inventory.php'" />
         <input type="button" value="Export" onclick="window.location.href='export.php'" />
+        <input type="button" value="Activity" onclick="window.location.href='activitylog.php'" />
         <input type="button" value="Logout" onclick="window.location.href='../controller/logout.php'" />
     </fieldset>
 </form>
-
 </body>
 </html>

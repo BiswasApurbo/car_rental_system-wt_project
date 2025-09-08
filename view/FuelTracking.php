@@ -2,9 +2,8 @@
 session_start();
 require_once "../model/FuelModel.php";
 
-$model = new FuelModel();
 $user_id = $_SESSION['user_id'] ?? 1;
-$pricePerLiter = $model->getPricePerLiter();
+$pricePerLiter = getPricePerLiter(); 
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $fuelLimit = floatval($_POST['fuelLimit'] ?? 0);
@@ -28,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $filePath = $uploadDir . $fileName;
 
     if (move_uploaded_file($file['tmp_name'], $filePath)) {
-        $success = $model->addFuelRecord($user_id, $fuelLimit, $refuelLiters, $pricePerLiterPost, $totalCost, $fileName);
+        $success = addFuelRecord($user_id, $fuelLimit, $refuelLiters, $pricePerLiterPost, $totalCost, $fileName);
 
         if ($success) {
             echo "<h2 style='color:green;'>✅ Fuel record submitted successfully!</h2><br>";
@@ -59,7 +58,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <body>
 <h1>Fuel Tracking</h1>
 <div class="container">
-<form id="fuelForm" action="FuelTracking.php" method="POST" onsubmit="return submitFuel()" enctype="multipart/form-data">
+<form id="fuelForm" action="" method="POST" onsubmit="return submitFuel()" enctype="multipart/form-data">
     <label>Fuel Limit (liters):</label>
     <input type="number" id="fuelLimit" name="fuelLimit" min="0" step="0.1" placeholder="Enter fuel limit" />
 
@@ -69,7 +68,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <p><strong>Price per liter:</strong> TK <span id="displayPricePerLiter"><?= number_format($pricePerLiter, 2) ?></span></p>
     <p><strong>Total Refuel Cost:</strong> TK <span id="totalCost">0.00</span></p>
 
-  
     <input type="hidden" name="pricePerLiter" id="pricePerLiter" value="<?= number_format($pricePerLiter, 2) ?>" />
     <input type="hidden" name="totalCost" id="hiddenTotalCost" />
 
