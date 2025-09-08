@@ -11,19 +11,18 @@ if (isset($_GET['error'])) {
     }
 }
 
-$phpErrU = $phpErrP = "";
 $username = "";
 $rememberChecked = false;
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<title>Car Rental System - Login</title>
-<link rel="stylesheet" type="text/css" href="../asset/auth.css">
-<style>
-.error-msg { color: red; font-weight: 600; margin: 4px 0; }
-</style>
+    <meta charset="utf-8" />
+    <title>Car Rental System - Login</title>
+    <link rel="stylesheet" type="text/css" href="../asset/auth.css">
+    <style>
+        .error-msg { color: red; font-weight: 600; margin: 4px 0; }
+    </style>
 </head>
 <body>
 <h1>Login Page</h1>
@@ -34,7 +33,7 @@ $rememberChecked = false;
     </p>
 <?php endif; ?>
 
-<form method="post" action="../controller/loginCheck.php" onsubmit="return loginCheck()">
+<form id="loginForm">
 <fieldset>
     <?php if ($err2): ?>
         <p style="color:red; font-weight:bold;"><?= htmlspecialchars($err2) ?></p>
@@ -55,7 +54,7 @@ $rememberChecked = false;
 
     <label><input type="checkbox" name="remember" value="1" <?= $rememberChecked ? 'checked' : '' ?>> Remember me</label><br>
 
-    <input type="submit" value="Login" />
+    <input type="button" value="Login" onclick="loginUser()" />
     <p id="loginSuccess" class="error-msg"></p>
 </fieldset>
 
@@ -78,12 +77,40 @@ function checkLoginPassword() {
         password === "" ? "Please type password!" : "";
 }
 
-function loginCheck() {
+function loginUser() {
     checkLoginUsername();
     checkLoginPassword();
-    const uError = document.getElementById('loginUError').innerHTML;
-    const pError = document.getElementById('loginPError').innerHTML;
-    return uError === "" && pError === "";
+
+    const username = document.getElementById('loginUsername').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const remember = document.querySelector('input[name="remember"]:checked') ? '1' : '0';
+    const user = {
+        'username': username,
+        'password': password,
+        'remember': remember
+    };
+
+    const data = JSON.stringify(user);
+
+    const xhttp = new XMLHttpRequest();
+    xhttp.open('POST', '../controller/loginCheck.php', true);
+    xhttp.setRequestHeader("Content-type", "application/json");
+    xhttp.send(data);
+
+    xhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            const response = JSON.parse(this.responseText);
+            if (response.status === 'success') {
+                if (response.role === 'admin') {
+                    window.location.href = 'admin_dashboard.php';
+                } else {
+                    window.location.href = 'user_dashboard.php';
+                }
+            } else {
+                document.getElementById('loginSuccess').innerHTML = response.message;
+            }
+        }
+    }
 }
 </script>
 </body>

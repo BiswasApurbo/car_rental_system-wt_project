@@ -1,27 +1,22 @@
 <?php
 session_start();
 
-try {
-    $errorMsg = '';
-    if (isset($_GET['error'])) {
-        $err = $_GET['error'];
-        if ($err === 'email_exists') {
-            $errorMsg = 'This email is already registered.';
-        } elseif ($err === 'regerror') {
-            $errorMsg = 'Registration failed. Try again.';
-        } elseif ($err === 'badrequest') {
-            $errorMsg = 'Please fill the form correctly.';
-        } elseif ($err === '404') {
-            header("Location: error404.php");
-            exit;
-        } elseif ($err === '500') {
-            header("Location: error500.php");
-            exit;
-        }
+$errorMsg = '';
+if (isset($_GET['error'])) {
+    $err = $_GET['error'];
+    if ($err === 'email_exists') {
+        $errorMsg = 'This email is already registered.';
+    } elseif ($err === 'regerror') {
+        $errorMsg = 'Registration failed. Try again.';
+    } elseif ($err === 'badrequest') {
+        $errorMsg = 'Please fill the form correctly.';
+    } elseif ($err === '404') {
+        header("Location: error404.php");
+        exit;
+    } elseif ($err === '500') {
+        header("Location: error500.php");
+        exit;
     }
-} catch (Throwable $e) {
-    header("Location: error500.php");
-    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -44,7 +39,7 @@ try {
         <p class="notice"><?= htmlspecialchars($errorMsg) ?></p>
     <?php endif; ?>
 
-    <form method="post" action="../controller/signupCheck.php" onsubmit="return signupCheck()">
+    <form id="signupForm">
         <fieldset>
             Username:
             <input type="text" id="signupUsername" name="username" onblur="checkSignupUsername()" />
@@ -58,7 +53,7 @@ try {
             <input type="password" id="signupPassword" name="password" onblur="checkSignupPassword()" />
             <p id="signupPError" class="error-msg"></p>
 
-            <input type="submit" value="Sign Up" />
+            <input type="button" value="Sign Up" onclick="signupUser()" />
             <p id="signupSuccess" class="ok"></p>
         </fieldset>
 
@@ -77,26 +72,59 @@ try {
             else if (username.length < 3) msg = "Username must be at least 3 characters!";
             document.getElementById('signupUError').innerHTML = msg;
         }
+        
         function checkSignupEmail() {
             const email = document.getElementById('signupEmail').value.trim();
             const valid = email !== "" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
             document.getElementById('signupEError').innerHTML = valid ? "" : "Please enter a valid email!";
         }
+
         function checkSignupPassword() {
             const password = document.getElementById('signupPassword').value;
             document.getElementById('signupPError').innerHTML =
                 password.length < 4 ? "Password must be at least 4 characters!" : "";
         }
-        function signupCheck() {
+
+        function signupUser() {
             checkSignupUsername();
             checkSignupEmail();
             checkSignupPassword();
-            const ok =
-                document.getElementById('signupUError').innerHTML === "" &&
-                document.getElementById('signupEError').innerHTML === "" &&
-                document.getElementById('signupPError').innerHTML === "";
+            
+            const username = document.getElementById('signupUsername').value.trim();
+            const email = document.getElementById('signupEmail').value.trim();
+            const password = document.getElementById('signupPassword').value;
+            
+            const ok = document.getElementById('signupUError').innerHTML === "" &&
+                       document.getElementById('signupEError').innerHTML === "" &&
+                       document.getElementById('signupPError').innerHTML === "";
             document.getElementById('signupSuccess').innerHTML = ok ? "Submitting…" : "";
-            return ok;
+
+            if (!ok) return false;
+
+            const user = {
+                'username': username,
+                'email': email,
+                'password': password
+            };
+
+            const data = JSON.stringify(user);
+
+            const xhttp = new XMLHttpRequest();
+            xhttp.open('POST', '../controller/signupCheck.php', true);
+            xhttp.setRequestHeader("Content-type", "application/json");
+            xhttp.send(data);
+
+            xhttp.onreadystatechange = function() {
+                if (this.readyState == 4 && this.status == 200) {
+                    const response = JSON.parse(this.responseText);
+                    if (response.status === 'success') {
+                        document.getElementById('signupSuccess').innerHTML = "Signup successful!";
+                        window.location.href = 'login.php?success=registered';
+                    } else {
+                        document.getElementById('signupSuccess').innerHTML = response.message;
+                    }
+                }
+            }
         }
     </script>
 </body>
