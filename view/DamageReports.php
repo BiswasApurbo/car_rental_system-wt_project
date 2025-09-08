@@ -2,8 +2,6 @@
 session_start();
 require_once "../model/DamageModel.php"; 
 
-$damageModel = new DamageModel();
-
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $userId = $_SESSION['user_id'] ?? null; 
@@ -32,14 +30,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $markedPhotoData = preg_replace('#^data:image/\w+;base64,#i', '', $markedPhotoData);
     file_put_contents($markedPhotoPath, base64_decode($markedPhotoData));
 
-   
+ 
     $signatureData = preg_replace('#^data:image/\w+;base64,#i', '', $signature);
     $signatureName = 'signature_' . time() . '.png';
     $signaturePath = $uploadDir . $signatureName;
     file_put_contents($signaturePath, base64_decode($signatureData));
 
-    
-    if ($damageModel->addDamageReport($userId, $vehiclePhotoName, $markedPhotoName, $damageMarks, $signatureName)) {
+    if (addDamageReport($userId, $vehiclePhotoName, $markedPhotoName, $damageMarks, $signatureName)) {
         echo "<h2 style='color:green;'>Damage report submitted successfully!</h2><br>";
         echo "<p><strong>Original Photo:</strong> <a href='".htmlspecialchars($vehiclePhotoPath)."' target='_blank'>View</a></p>";
         echo "<p><strong>Marked Vehicle Image:</strong> <a href='".htmlspecialchars($markedPhotoPath)."' target='_blank'>View</a></p>";
@@ -93,6 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </div>
 
 <script>
+
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 const image = new Image();

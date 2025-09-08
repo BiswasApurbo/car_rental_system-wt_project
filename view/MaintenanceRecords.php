@@ -1,10 +1,8 @@
 <?php
 session_start();
-require_once "../model/MaintenanceModel.php";
+require_once "../model/MaintenanceModel.php"; 
 
-$model = new MaintenanceModel();
 $user_id = $_SESSION['user_id'] ?? 1;  
-
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_service'])) {
     $date     = $_POST['date'] ?? '';
@@ -13,19 +11,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_service'])) {
     $remarks  = $_POST['remarks'] ?? '';
 
     if ($date && $name && $odometer !== '') {
-        $model->addService($user_id, $date, $name, $odometer, $remarks);
+        addService($user_id, $date, $name, $odometer, $remarks);
         $message = "New service added successfully!";
     } else {
         $error = "Please fill in all required fields.";
     }
 }
 
+
 if (isset($_GET['delete'])) {
     $deleteId = intval($_GET['delete']);
-    $model->deleteService($deleteId, $user_id);
+    deleteService($deleteId, $user_id);
     $message = "Service deleted successfully!";
 }
-$services = $model->getServicesByUser($user_id);
+
+
+$services = getServicesByUser($user_id);
+
 
 $alerts = [];
 if (!empty($services)) {
@@ -40,7 +42,8 @@ if (!empty($services)) {
     }
 }
 
-$recommended = $model->getRecommendedServices();
+
+$recommended = getRecommendedServices();
 $next_odometer = !empty($services) ? intval($services[0]['odometer']) : 0;
 ?>
 <!DOCTYPE html>

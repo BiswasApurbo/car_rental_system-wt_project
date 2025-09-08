@@ -1,8 +1,6 @@
 <?php
 session_start();
-require_once "../model/LoyaltyModel.php";
-
-$model = new LoyaltyModel();
+require_once "../model/LoyaltyModel.php"; 
 
 if (!isset($_SESSION['user_id'])) {
     $_SESSION['user_id'] = 1; 
@@ -12,7 +10,7 @@ $user_id = $_SESSION['user_id'];
 $message = "";
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redeemPoints'])) {
     $redeem = intval($_POST['redeemPoints']);
-    $result = $model->redeemPoints($user_id, $redeem);
+    $result = redeemLoyaltyPoints($user_id, $redeem); 
     if ($result['success']) {
         $message = "<p class='alert-box alert-success'>✅ Redeemed {$redeem} points! Remaining points: {$result['points']}</p>";
     } else {
@@ -20,7 +18,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redeemPoints'])) {
     }
 }
 
-$currentData = $model->getPoints($user_id);
+
+$currentData = getLoyaltyPoints($user_id);
 $currentPoints = $currentData['points'];
 $tier = $currentData['tier'];
 $maxPoints = 5000;
@@ -36,7 +35,6 @@ if ($tier === "Platinum") {
     $progress = ($currentPoints / $maxPoints) * 100;
 }
 ?>
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
