@@ -1,20 +1,31 @@
 <?php
 session_start();
 
-$errorMsg = '';
-if (isset($_GET['error'])) {
-    $err = $_GET['error'];
-    if ($err === 'email_exists') {
-        $errorMsg = 'This email is already registered.';
-    } elseif ($err === 'regerror') {
-        $errorMsg = 'Registration failed. Try again.';
-    } elseif ($err === 'badrequest') {
-        $errorMsg = 'Please fill the form correctly.';
+try {
+    $errorMsg = '';
+    if (isset($_GET['error'])) {
+        $err = $_GET['error'];
+        if ($err === 'email_exists') {
+            $errorMsg = 'This email is already registered.';
+        } elseif ($err === 'regerror') {
+            $errorMsg = 'Registration failed. Try again.';
+        } elseif ($err === 'badrequest') {
+            $errorMsg = 'Please fill the form correctly.';
+        } elseif ($err === '404') {
+            header("Location: error404.php");
+            exit;
+        } elseif ($err === '500') {
+            header("Location: error500.php");
+            exit;
+        }
     }
+} catch (Throwable $e) {
+    header("Location: error500.php");
+    exit;
 }
 ?>
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <title>Car Rental System - Signup</title>
@@ -29,7 +40,7 @@ if (isset($_GET['error'])) {
 <body>
     <h1>Signup Page</h1>
 
-    <?php if ($errorMsg): ?>
+    <?php if (!empty($errorMsg)): ?>
         <p class="notice"><?= htmlspecialchars($errorMsg) ?></p>
     <?php endif; ?>
 

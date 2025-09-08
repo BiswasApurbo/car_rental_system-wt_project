@@ -2,8 +2,8 @@
 session_start();
 require_once '../model/PickupModel.php';
 
-$model = new PickupModel();
-$branches = $model->getBranches();
+
+$branches = getBranches();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $branchId = $_POST['branch'] ?? '';
@@ -13,13 +13,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         die("Please select a branch.");
     }
 
-   
+    
     $selectedBranch = array_filter($branches, fn($b) => $b['id'] == $branchId);
     $branch = reset($selectedBranch);
 
     if (!$branch) die("Branch not found.");
 
-    if ($model->addPickup($userId, $branch)) {
+   
+    if (addPickup($userId, $branch)) {
         echo "<h2 style='color:green;'>Pickup Location Confirmed!</h2>";
         echo "<p>Branch: ".htmlspecialchars($branch['branch_name'])."</p>";
         echo "<p>City: ".htmlspecialchars($branch['city'])."</p>";
@@ -39,9 +40,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Pickup Locations</title>
-    <link rel="stylesheet" href="../asset/designs.css">
+<meta charset="UTF-8">
+<title>Pickup Locations</title>
+<link rel="stylesheet" href="../asset/designs.css">
 </head>
 <body>
 <h1>Pickup Locations</h1>
@@ -112,7 +113,7 @@ function updateBranchDetails() {
 
 populateBranches(branches);
 
-document.getElementById("pickupForm").addEventListener("submit", function() {
+document.getElementById("pickupForm").addEventListener("submit", function(event) {
     const branchDropdown = document.getElementById("branchDropdown");
     if (branchDropdown.value === "") {
         document.getElementById("branchError").textContent = "Please select a branch from the list.";

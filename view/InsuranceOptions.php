@@ -2,8 +2,8 @@
 session_start();
 require_once "../model/InsuranceModel.php";
 
-$model = new InsuranceModel();
-$settings = $model->getSettings();
+// Fetch all settings
+$settings = getSettings();
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tier = $_POST['tier'] ?? '';
@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     if (empty($tier)) die("Please select a coverage tier.");
     if (empty($claim)) die("Please select or enter a claim.");
 
-    
+    // Use the 'other' claim if provided
     if ($claim === "other" && !empty($otherClaim)) {
         $claim = $otherClaim;
     }
@@ -21,7 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $deductible = $settings[$tier] ?? 0;
     $userId = $_SESSION['user_id'] ?? 1; 
 
-    $model->addRecord($userId, $tier, $deductible, $claim);
+    // Insert record
+    addRecord($userId, $tier, $deductible, $claim);
 
     echo "<h2 style='color:green;'>Insurance Option Confirmed!</h2>";
     echo "<p><strong>Tier:</strong> $tier</p>";
@@ -90,7 +91,7 @@ function fetchClaims() {
 
     if (tier) {
         container.style.display = "block";
-       
+
         const examples = {
             basic: ["Minor scratch", "Broken side mirror", "Flat tire replacement"],
             standard: ["Moderate dent repair", "Rear bumper damage", "Windshield crack"],

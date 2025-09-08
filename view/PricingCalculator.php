@@ -1,13 +1,11 @@
 <?php
 session_start();
-require_once "../model/PricingModel.php";
-
-$model = new PricingModel();
+require_once "../model/PricingModel.php"; 
 
 
-$settings = $model->getSettings();
+$settings = getSettings();
 $baseFeePerDay = $settings['base_fee_per_day'] ?? 500; 
-$promoCodes = $model->getAllPromoCodes(); 
+$promoCodes = getAllPromoCodes(); 
 
 $quote = null;
 $error = "";
@@ -38,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quote = $_SESSION['quote'];
 
         if (isset($_SESSION['user_id'])) {
-            $model->addRecord($_SESSION['user_id'], $days, $promo, $discountPercent, $discountAmount, $baseFee, $tax, $total);
+            addRecord($_SESSION['user_id'], $days, $promo, $discountPercent, $discountAmount, $baseFee, $tax, $total);
         }
     }
 }

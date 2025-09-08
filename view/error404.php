@@ -9,7 +9,7 @@
   <div class="error-container">
     <h1>404</h1>
     <p>Oops! The page you are looking for doesn’t exist.</p>
-    <a href="login.php" class="btn">Go Home</a>
+    <a href="../view/login.php" class="btn">Go Home</a>
   </div>
 </body>
 </html>
