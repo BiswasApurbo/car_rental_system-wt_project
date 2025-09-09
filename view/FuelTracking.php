@@ -61,7 +61,6 @@ function calculateCost() {
     document.getElementById("hiddenTotalCost").value = total.toFixed(2);
 }
 
-// AJAX submission
 document.getElementById("fuelForm").addEventListener("submit", function(e){
     e.preventDefault();
     const fuelLimit = parseFloat(document.getElementById("fuelLimit").value);

@@ -36,7 +36,7 @@ function fillService(serviceName, odometerValue, remarks) {
     document.getElementById('remarks').value = remarks;
 }
 
-// AJAX: Add service
+
 function submitService(e) {
     e.preventDefault();
     const date = document.querySelector("input[name='date']").value;
@@ -66,7 +66,7 @@ function submitService(e) {
                 const res = JSON.parse(xhr.responseText);
                 if (res.success) {
                     resultDiv.innerHTML = "<p class='green'>" + res.message + "</p>";
-                    // Reload service timeline
+              
                     loadServices();
                     document.getElementById('serviceForm').reset();
                 } else {
@@ -82,7 +82,6 @@ function submitService(e) {
     xhr.send(formData);
 }
 
-// AJAX: Delete service
 function deleteService(id) {
     if (!confirm("Are you sure?")) return;
     const xhr = new XMLHttpRequest();
@@ -108,7 +107,7 @@ function deleteService(id) {
     xhr.send("delete_id=" + id);
 }
 
-// Load services via AJAX (refresh table)
+
 function loadServices() {
     const xhr = new XMLHttpRequest();
     xhr.open("GET", "../controller/Maintenance_handler.php?fetch=1", true);

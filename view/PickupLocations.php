@@ -89,10 +89,9 @@ function updateBranchDetails() {
     }
 }
 
-// Populate initially
+
 populateBranches(branches);
 
-// AJAX form submission
 document.getElementById("pickupForm").addEventListener("submit", function(e){
     e.preventDefault();
     const branchId = document.getElementById("branchDropdown").value;

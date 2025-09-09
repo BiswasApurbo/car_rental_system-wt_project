@@ -106,7 +106,7 @@ function setPrices(base, tax, discount, total, percent) {
     document.getElementById("total").textContent = "TK"+total.toFixed(2);
 }
 
-// AJAX submission
+
 document.getElementById("pricingForm").addEventListener("submit", function(e){
     e.preventDefault();
 

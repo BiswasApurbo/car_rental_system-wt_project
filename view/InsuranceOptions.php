@@ -2,7 +2,7 @@
 session_start();
 require_once "../model/InsuranceModel.php";
 
-// Fetch all settings
+
 $settings = getSettings();
 ?>
 
@@ -96,7 +96,6 @@ function toggleOther() {
     document.getElementById("otherClaimDiv").style.display = (claim === "other") ? "block" : "none";
 }
 
-// AJAX form submission
 document.getElementById("insuranceForm").addEventListener("submit", function(e){
     e.preventDefault();
 
