@@ -7,15 +7,12 @@ if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
     header('location: ../view/login.php?error=not_logged_in');
     exit;
 }
-
-// Validate dates (ensure dateFrom is not greater than dateTo)
 $fromDate = isset($_POST['dateFrom']) ? $_POST['dateFrom'] : '2025-01-01'; 
 $toDate = isset($_POST['dateTo']) ? $_POST['dateTo'] : date('Y-m-d'); 
 $username = isset($_POST['user']) ? $_POST['user'] : ''; 
 
 if ($fromDate > $toDate) {
     $errorMessage = "The 'From Date' cannot be later than the 'To Date'. Please correct it.";
-    // Optionally, handle this error with a session or display message.
 }
 
 $logs = getActivityLog($fromDate, $toDate, $username);
@@ -27,12 +24,10 @@ $logs = getActivityLog($fromDate, $toDate, $username);
   <title>Activity Logs</title>
   <link rel="stylesheet" type="text/css" href="../asset/activitylog.css">
   <script>
-    // JavaScript Validation for the Date Fields
     function validateForm() {
       const fromDate = document.getElementById("dateFrom").value;
       const toDate = document.getElementById("dateTo").value;
 
-      // Check if 'from' date is earlier than 'to' date
       if (new Date(fromDate) > new Date(toDate)) {
         alert("The 'From Date' cannot be later than the 'To Date'. Please correct it.");
         return false;
@@ -59,6 +54,7 @@ $logs = getActivityLog($fromDate, $toDate, $username);
         <input type="text" id="user" name="user" placeholder="Enter username" value="<?php echo htmlspecialchars($username); ?>">
 
         <button class="btn" type="submit">Filter</button>
+        <input type="button" value="Back to Dashboard" onclick="window.location.href='user_dashboard.php'" />
       </form>
     </div>
 
