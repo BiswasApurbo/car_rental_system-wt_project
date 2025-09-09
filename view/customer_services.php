@@ -33,6 +33,8 @@ setTimeout(() => btn.disabled = false, 800);
 <a class="service-btn" href="MaintenanceRecords.php">Maintenance Records</a>
 <a class="service-btn" href="LoyaltyProgram.php">Loyalty Program</a> 
 <a class="service-btn" href="user_dashboard.php">Back To Dashboard</a>
+<a class="service-btn" href="profile.php">Back To Profile</a>
+
 </div>
 <footer class="foot"></footer>
 </main>
