@@ -3,7 +3,7 @@ session_start();
 require_once('../model/vehicleModel.php');
 require_once('../model/userModel.php');            
 
-// Check if the user is logged in
+
 if (!isset($_SESSION['status']) || $_SESSION['status'] !== true) {
     header('Location: ../view/login.php?error=badrequest');
     exit;
@@ -22,7 +22,7 @@ $priceStr   = $_POST['price'] ?? '';
 $page       = max(1, (int)($_GET['page'] ?? 1));
 $perPage    = 12;
 
-// Validate filters
+
 if ($typeId !== '') {
     if (!ctype_digit((string)$typeId)) { $errors['type'] = 'Invalid vehicle type.'; $typeId=''; }
 }
@@ -72,7 +72,7 @@ if ($total === 0) $message = 'No vehicles matched your filters.';
         .btn.secondary{background:#fff;color:#2c3e50}
     </style>
     <script>
-        // Function to submit the filters via AJAX
+      
         function submitFilters() {
             const formData = new FormData(document.getElementById('filterForm'));
             const xhr = new XMLHttpRequest();
@@ -81,9 +81,9 @@ if ($total === 0) $message = 'No vehicles matched your filters.';
                 if (xhr.status === 200) {
                     const response = JSON.parse(xhr.responseText);
                     if (response.status === 'success') {
-                        // Update vehicle listings
+                        
                         document.getElementById('vehicleList').innerHTML = response.vehicles;
-                        // Update pagination
+                        
                         document.getElementById('pagination').innerHTML = response.pagination;
                     } else {
                         alert(response.message);
@@ -93,7 +93,7 @@ if ($total === 0) $message = 'No vehicles matched your filters.';
             xhr.send(formData);
         }
 
-        // Reset the filters
+        
         function resetFilters() {
             document.getElementById('filterForm').reset();
             submitFilters();
@@ -149,7 +149,7 @@ if ($total === 0) $message = 'No vehicles matched your filters.';
     </form>
 
     <div id="vehicleList" class="grid">
-        <!-- Vehicle listing will be dynamically updated here -->
+      
         <?php if ($total > 0): ?>
             <?php foreach ($vehicles as $v): ?>
                 <div class="vehicle">
@@ -177,7 +177,7 @@ if ($total === 0) $message = 'No vehicles matched your filters.';
     </div>
 
     <div id="pagination">
-        <!-- Pagination will be dynamically updated here -->
+      
         <?php
         if ($totalPages > 1):
             $qs = [

@@ -116,16 +116,16 @@ if ($roleFilter === 'All') {
         .warn{color:red;font-weight:700}
     </style>
     <script>
-        // Function to apply the role filter using AJAX
+        
         function applyFilter() {
             let roleFilter = document.getElementById('roleFilter').value;
-            fetchUsers(roleFilter); // Fetch filtered users via AJAX
+            fetchUsers(roleFilter); 
         }
 
-        // Function to fetch users with AJAX and update the table
+    
         function fetchUsers(roleFilter = 'All') {
             let xhttp = new XMLHttpRequest();
-            xhttp.open('POST', '../controller/loadUsers.php', true);  // Corrected path
+            xhttp.open('POST', '../controller/loadUsers.php', true);  
             xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
             xhttp.send('roleFilter=' + roleFilter);
 
@@ -133,7 +133,7 @@ if ($roleFilter === 'All') {
                 if (this.readyState == 4 && this.status == 200) {
                     let response = JSON.parse(this.responseText);
                     let userList = document.getElementById('userList');
-                    userList.innerHTML = ''; // Clear the table first
+                    userList.innerHTML = ''; 
 
                     if (response.status === 'success') {
                         response.users.forEach(function(user) {
@@ -156,7 +156,7 @@ if ($roleFilter === 'All') {
             };
         }
 
-        // Function to delete a user via AJAX
+        
         function deleteUser(userId) {
             if (confirm('Are you sure you want to delete this user?')) {
                 let xhttp = new XMLHttpRequest();
@@ -164,13 +164,13 @@ if ($roleFilter === 'All') {
                 xhttp.send();
                 xhttp.onreadystatechange = function() {
                     if (this.readyState == 4 && this.status == 200) {
-                        fetchUsers(); // Refresh the user list after deletion
+                        fetchUsers(); 
                     }
                 };
             }
         }
 
-        // Function to handle bulk deletion via AJAX
+        
         function bulkDelete() {
             let selectedUsers = [];
             document.querySelectorAll("input[name='user_ids[]']:checked").forEach(function(checkbox) {
@@ -179,12 +179,12 @@ if ($roleFilter === 'All') {
 
             if (selectedUsers.length > 0 && confirm("Are you sure you want to delete the selected users?")) {
                 let xhttp = new XMLHttpRequest();
-                xhttp.open('POST', '../controller/bulkDelete.php', true);  // Corrected path
+                xhttp.open('POST', '../controller/bulkDelete.php', true);  
                 xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhttp.send('user_ids=' + JSON.stringify(selectedUsers));
                 xhttp.onreadystatechange = function() {
                     if (this.readyState == 4 && this.status == 200) {
-                        fetchUsers(); // Refresh the user list after bulk delete
+                        fetchUsers(); 
                     }
                 };
             } else {
@@ -193,7 +193,7 @@ if ($roleFilter === 'All') {
         }
 
         window.onload = function() {
-            fetchUsers(); // Load users on page load
+            fetchUsers(); 
         }
     </script>
 </head>
@@ -201,7 +201,7 @@ if ($roleFilter === 'All') {
     <div class="admin-card">
         <h1>Admin Panel - User Management</h1>
 
-        <!-- Filter by role -->
+    
         <form id="filterForm" method="POST" action="" onsubmit="event.preventDefault(); applyFilter();">
             <fieldset class="controls">
                 <label for="roleFilter">Filter by role:</label>
@@ -233,7 +233,7 @@ if ($roleFilter === 'All') {
                         </tr>
                     </thead>
                     <tbody id="userList">
-                        <!-- The user list will be populated dynamically with AJAX -->
+                
                     </tbody>
                 </table>
 
