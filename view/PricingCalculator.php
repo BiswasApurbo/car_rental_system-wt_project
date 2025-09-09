@@ -1,70 +1,31 @@
 <?php
 session_start();
-require_once "../model/PricingModel.php"; 
-
+require_once "../model/PricingModel.php";
 
 $settings = getSettings();
-$baseFeePerDay = $settings['base_fee_per_day'] ?? 500; 
-$promoCodes = getAllPromoCodes(); 
-
-$quote = null;
-$error = "";
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $days = $_POST['days'] ?? '';
-    $promo = $_POST['promo'] ?? '';
-
-    if (empty($days) || !is_numeric($days) || $days <= 0) {
-        $error = "Please enter a valid number of rental days.";
-    } else {
-        $discountPercent = $promoCodes[$promo] ?? 0;
-        $baseFee = $baseFeePerDay * $days;
-        $discountAmount = ($discountPercent / 100) * $baseFee;
-        $tax = 0.1 * $baseFee;
-        $total = $baseFee + $tax - $discountAmount;
-
-        $_SESSION['quote'] = [
-            'days' => $days,
-            'promo' => $promo,
-            'discountPercent' => $discountPercent,
-            'discountAmount' => $discountAmount,
-            'baseFee' => $baseFee,
-            'tax' => $tax,
-            'total' => $total
-        ];
-
-        $quote = $_SESSION['quote'];
-
-        if (isset($_SESSION['user_id'])) {
-            addRecord($_SESSION['user_id'], $days, $promo, $discountPercent, $discountAmount, $baseFee, $tax, $total);
-        }
-    }
-}
+$baseFeePerDay = $settings['base_fee_per_day'] ?? 500;
+$promoCodes = getAllPromoCodes();
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>Pricing Calculator</title>
-    <link rel="stylesheet" href="../asset/designs.css">
-    <style>
-        .message { font-size: 14px; margin: 4px 0; }
-        .green { color: green; }
-        .red { color: red; }
-        .button-container { display: flex; gap: 10px; margin-top: 20px; }
-    </style>
+<meta charset="UTF-8">
+<title>Pricing Calculator</title>
+<link rel="stylesheet" href="../asset/designs.css">
+<style>
+    .message { font-size: 14px; margin: 4px 0; }
+    .green { color: green; }
+    .red { color: red; }
+    .button-container { display: flex; gap: 10px; margin-top: 20px; }
+    #result { margin-top: 20px; padding: 15px; border: 1px solid #ddd; border-radius: 6px; }
+</style>
 </head>
 <body>
 <h1>Car Rental Pricing Calculator</h1>
 
 <div class="container">
-<?php if ($error): ?>
-    <p style="color:red;"><strong><?= htmlspecialchars($error) ?></strong></p>
-<?php endif; ?>
-
-<?php if (!$quote): ?>
-<form id="pricingForm" action="" method="POST" onsubmit="return calculateQuote()">
+<form id="pricingForm" method="POST">
     <label>Rental Days:</label>
     <input type="number" name="days" id="days" oninput="updatePrice()" min="1"/>
 
@@ -86,27 +47,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input type="hidden" name="totalAmount" id="totalAmount"/>
     <input type="submit" value="Get Quote"/>
     <br><br>
-    <div class="button-container">
-        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-    </div>
-</form>
-<?php else: ?>
-<div style="margin-top:20px;">
-    <h2 style="color:green;">Quote Generated Successfully!</h2>
-    <p>Rental Days: <?= htmlspecialchars($quote['days']) ?></p>
-    <p>Promo Code: <?= htmlspecialchars($quote['promo']) ?> (<?= $quote['discountPercent'] ?>% discount)</p>
-    <p>Base Fee: TK<?= number_format($quote['baseFee'],2) ?></p>
-    <p>Tax (10%): TK<?= number_format($quote['tax'],2) ?></p>
-    <p>Discount: TK<?= number_format($quote['discountAmount'],2) ?></p>
-    <p><strong>Total: TK<?= number_format($quote['total'],2) ?></strong></p>
 
     <div class="button-container">
         <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
         <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
     </div>
-</div>
-<?php endif; ?>
+</form>
+
+<div id="result"></div>
 </div>
 
 <script>
@@ -142,11 +90,11 @@ function updatePrice() {
     }
 
     const baseFee = baseRate * days;
-    const discount = (discountPercent/100)*baseFee;
+    const discountAmount = (discountPercent/100) * baseFee;
     const tax = 0.1 * baseFee;
-    const total = baseFee + tax - discount;
+    const total = baseFee + tax - discountAmount;
 
-    setPrices(baseFee, tax, discount, total, discountPercent);
+    setPrices(baseFee, tax, discountAmount, total, discountPercent);
     document.getElementById("totalAmount").value = total.toFixed(2);
 }
 
@@ -158,14 +106,43 @@ function setPrices(base, tax, discount, total, percent) {
     document.getElementById("total").textContent = "TK"+total.toFixed(2);
 }
 
-function calculateQuote() {
-    const days = parseInt(document.getElementById("days").value);
-    if (isNaN(days) || days <= 0) {
-        alert("Please enter valid rental days.");
-        return false;
-    }
-    return true; 
-}
+// AJAX submission
+document.getElementById("pricingForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const formData = new FormData(this);
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "../controller/PricingCalculator_handler.php", true);
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+    xhr.onload = function() {
+        const resultDiv = document.getElementById("result");
+        if (xhr.status === 200) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    resultDiv.innerHTML = `
+                        <h2 style="color:green;">Quote Generated Successfully!</h2>
+                        <p>Rental Days: ${res.quote.days}</p>
+                        <p>Promo Code: ${res.quote.promo} (${res.quote.discountPercent}% discount)</p>
+                        <p>Base Fee: TK${res.quote.baseFee.toFixed(2)}</p>
+                        <p>Tax (10%): TK${res.quote.tax.toFixed(2)}</p>
+                        <p>Discount: TK${res.quote.discountAmount.toFixed(2)}</p>
+                        <p><strong>Total: TK${res.quote.total.toFixed(2)}</strong></p>
+                    `;
+                } else {
+                    resultDiv.innerHTML = `<p style="color:red;"><strong>${res.error}</strong></p>`;
+                }
+            } catch(e) {
+                resultDiv.innerHTML = "<p style='color:red;'>Server error parsing response.</p>";
+            }
+        } else {
+            resultDiv.innerHTML = "<p style='color:red;'>Server error.</p>";
+        }
+    };
+
+    xhr.send(formData);
+});
 </script>
 </body>
 </html>

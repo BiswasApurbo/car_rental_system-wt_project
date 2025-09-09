@@ -4,51 +4,26 @@ require_once "../model/InsuranceModel.php";
 
 // Fetch all settings
 $settings = getSettings();
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $tier = $_POST['tier'] ?? '';
-    $claim = $_POST['claim'] ?? '';
-    $otherClaim = $_POST['otherClaim'] ?? '';
-
-    if (empty($tier)) die("Please select a coverage tier.");
-    if (empty($claim)) die("Please select or enter a claim.");
-
-    // Use the 'other' claim if provided
-    if ($claim === "other" && !empty($otherClaim)) {
-        $claim = $otherClaim;
-    }
-
-    $deductible = $settings[$tier] ?? 0;
-    $userId = $_SESSION['user_id'] ?? 1; 
-
-    // Insert record
-    addRecord($userId, $tier, $deductible, $claim);
-
-    echo "<h2 style='color:green;'>Insurance Option Confirmed!</h2>";
-    echo "<p><strong>Tier:</strong> $tier</p>";
-    echo "<p><strong>Deductible:</strong> TK$deductible</p>";
-    echo "<p><strong>Claim:</strong> ".htmlspecialchars($claim)."</p>";
-
-    echo '<div style="margin-top:20px;">
-            <input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" 
-            style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;margin-right:10px;">
-            <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" 
-            style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-          </div>';
-    exit;
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <title>Insurance Options</title>
 <link rel="stylesheet" href="../asset/designs.css">
+<style>
+    .message { font-size:14px; margin:4px 0; }
+    .green { color:green; }
+    .red { color:red; }
+    .button-container { display:flex; gap:10px; margin-top:20px; }
+    #result { margin-top:20px; padding:15px; border:1px solid #ddd; border-radius:6px; }
+</style>
 </head>
 <body>
 <h1>Insurance Options</h1>
 <div class="container">
-<form method="POST" action="InsuranceOptions.php" id="insuranceForm">
+<form id="insuranceForm" method="POST">
     <label>Select Coverage Tier:</label>
     <select name="tier" id="tier" onchange="fetchClaims()" required>
         <option value="">-- Select Tier --</option>
@@ -67,15 +42,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <div id="otherClaimDiv" style="display:none; margin-top:5px;">
             <input type="text" name="otherClaim" id="otherClaim" placeholder="Describe your claim here...">
         </div>
+        <p id="claimError" class="message red"></p>
     </div>
 
     <br><br>
     <input type="submit" value="Confirm Option"/>
-    <br><br>
-    <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" 
-    style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;margin-right:10px;">
-    <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" 
-    style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    <div class="button-container">
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'">
+    </div>
+    <p id="result"></p>
 </form>
 </div>
 
@@ -85,7 +61,6 @@ function fetchClaims() {
     const claimDropdown = document.getElementById("claimDropdown");
     const container = document.getElementById("claimContainer");
     const otherDiv = document.getElementById("otherClaimDiv");
-
     claimDropdown.innerHTML = '<option value="">-- Select Claim --</option>';
     otherDiv.style.display = "none";
 
@@ -118,9 +93,66 @@ function fetchClaims() {
 
 function toggleOther() {
     const claim = document.getElementById("claimDropdown").value;
-    const otherDiv = document.getElementById("otherClaimDiv");
-    otherDiv.style.display = (claim === "other") ? "block" : "none";
+    document.getElementById("otherClaimDiv").style.display = (claim === "other") ? "block" : "none";
 }
+
+// AJAX form submission
+document.getElementById("insuranceForm").addEventListener("submit", function(e){
+    e.preventDefault();
+
+    const tier = document.getElementById("tier").value;
+    const claimDropdown = document.getElementById("claimDropdown").value;
+    const otherClaim = document.getElementById("otherClaim").value.trim();
+    const resultDiv = document.getElementById("result");
+    const claimError = document.getElementById("claimError");
+
+    claimError.textContent = '';
+    resultDiv.textContent = '';
+
+    if (!tier) {
+        resultDiv.innerHTML = "<p class='red'>Please select a coverage tier.</p>";
+        return;
+    }
+    if (!claimDropdown) {
+        claimError.textContent = "Please select or enter a claim.";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("tier", tier);
+    formData.append("claim", claimDropdown);
+    formData.append("otherClaim", otherClaim);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "../controller/Insurance_handler.php", true);
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    resultDiv.innerHTML = `
+                        <h2 class="green">Insurance Option Confirmed!</h2>
+                        <p><strong>Tier:</strong> ${res.data.tier}</p>
+                        <p><strong>Deductible:</strong> TK${res.data.deductible}</p>
+                        <p><strong>Claim:</strong> ${res.data.claim}</p>
+                    `;
+                    document.getElementById("insuranceForm").reset();
+                    document.getElementById("claimContainer").style.display = "none";
+                    document.getElementById("otherClaimDiv").style.display = "none";
+                } else {
+                    resultDiv.innerHTML = `<p class='red'><strong>${res.message}</strong></p>`;
+                }
+            } catch(e) {
+                resultDiv.innerHTML = "<p class='red'>Server error parsing response.</p>";
+            }
+        } else {
+            resultDiv.innerHTML = "<p class='red'>Server error.</p>";
+        }
+    };
+    xhr.send(formData);
+});
 </script>
 </body>
 </html>

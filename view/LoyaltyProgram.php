@@ -2,38 +2,22 @@
 session_start();
 require_once "../model/LoyaltyModel.php"; 
 
-if (!isset($_SESSION['user_id'])) {
-    $_SESSION['user_id'] = 1; 
-}
+if (!isset($_SESSION['user_id'])) $_SESSION['user_id'] = 1;
 $user_id = $_SESSION['user_id'];
-
-$message = "";
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['redeemPoints'])) {
-    $redeem = intval($_POST['redeemPoints']);
-    $result = redeemLoyaltyPoints($user_id, $redeem); 
-    if ($result['success']) {
-        $message = "<p class='alert-box alert-success'>✅ Redeemed {$redeem} points! Remaining points: {$result['points']}</p>";
-    } else {
-        $message = "<p class='alert-box alert-danger'>❌ Not enough points to redeem.</p>";
-    }
-}
-
 
 $currentData = getLoyaltyPoints($user_id);
 $currentPoints = $currentData['points'];
 $tier = $currentData['tier'];
 $maxPoints = 5000;
 
-if ($tier === "Platinum") {
-    $nextTierPoints = "Max tier reached 🎉";
-    $progress = ($currentPoints / $maxPoints) * 100;
-} elseif ($tier === "Gold") {
-    $nextTierPoints = 4000 - $currentPoints;
-    $progress = ($currentPoints / $maxPoints) * 100;
-} else {
-    $nextTierPoints = 2000 - $currentPoints;
-    $progress = ($currentPoints / $maxPoints) * 100;
+function calcProgress($tier, $points, $maxPoints) {
+    if ($tier === "Platinum") return ["nextTierPoints"=>"Max tier reached 🎉","progress"=>($points/$maxPoints)*100];
+    elseif ($tier === "Gold") return ["nextTierPoints"=>4000-$points,"progress"=>($points/$maxPoints)*100];
+    else return ["nextTierPoints"=>2000-$points,"progress"=>($points/$maxPoints)*100];
 }
+$progressData = calcProgress($tier,$currentPoints,$maxPoints);
+$nextTierPoints = $progressData['nextTierPoints'];
+$progress = $progressData['progress'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,52 +25,44 @@ if ($tier === "Platinum") {
 <meta charset="UTF-8">
 <title>Loyalty Program</title>
 <link rel="stylesheet" href="../asset/LoyaltyProgram.css">
+<style>
+.points-bar { width:100%; background:#eee; border-radius:8px; height:20px; margin-bottom:10px; }
+.points-progress { height:100%; background:#1f6feb; border-radius:8px; }
+.message { margin:10px 0; font-size:14px; }
+.green { color:green; }
+.red { color:red; }
+</style>
 </head>
 <body>
 <div class="form-wrapper">
 <fieldset>
 <h1>Loyalty Program Dashboard</h1>
-
-<?= $message ?>
+<div id="messageArea"></div>
 
 <h2>💎 Points Tracker</h2>
-<p>Current Points: <strong><?= $currentPoints ?></strong> / <?= $maxPoints ?></p>
-<p>Current Tier: <strong><?= $tier ?></strong></p>
-<p>Points to Next Tier: <strong><?= $nextTierPoints ?></strong></p>
+<p>Current Points: <strong id="currentPoints"><?= $currentPoints ?></strong> / <?= $maxPoints ?></p>
+<p>Current Tier: <strong id="currentTier"><?= $tier ?></strong></p>
+<p>Points to Next Tier: <strong id="pointsNextTier"><?= $nextTierPoints ?></strong></p>
 <div class="points-bar">
-    <div class="points-progress" style="width: <?= $progress ?>%;"></div>
+    <div class="points-progress" id="pointsProgress" style="width: <?= $progress ?>%;"></div>
 </div>
 
 <h2>🎁 Reward Catalog</h2>
 <table>
 <tr><th>Reward</th><th>Points Required</th><th>Action</th></tr>
+<?php
+$rewards = [
+    ["name"=>"Free Coffee","points"=>100],
+    ["name"=>"Discount Voucher tk.10000","points"=>500],
+    ["name"=>"Free Upgrade","points"=>1000]
+];
+foreach($rewards as $r): ?>
 <tr>
-<td>Free Coffee</td><td>100</td>
-<td>
-<form method="post" onsubmit="return validateRedeem(100)">
-<input type="hidden" name="redeemPoints" value="100">
-<input type="submit" value="Redeem">
-</form>
-</td>
+<td><?= $r['name'] ?></td>
+<td><?= $r['points'] ?></td>
+<td><button onclick="redeemPoints(<?= $r['points'] ?>)">Redeem</button></td>
 </tr>
-<tr>
-<td>Discount Voucher tk.10000</td><td>500</td>
-<td>
-<form method="post" onsubmit="return validateRedeem(500)">
-<input type="hidden" name="redeemPoints" value="500">
-<input type="submit" value="Redeem">
-</form>
-</td>
-</tr>
-<tr>
-<td>Free Upgrade</td><td>1000</td>
-<td>
-<form method="post" onsubmit="return validateRedeem(1000)">
-<input type="hidden" name="redeemPoints" value="1000">
-<input type="submit" value="Redeem">
-</form>
-</td>
-</tr>
+<?php endforeach; ?>
 </table>
 
 <h2>🏆 Tier Benefits</h2>
@@ -99,18 +75,36 @@ if ($tier === "Platinum") {
 <br><br>
 <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
 <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-
 </fieldset>
 </div>
 
 <script>
-function validateRedeem(requiredPoints) {
-    const currentPoints = <?= $currentPoints ?>;
-    if (requiredPoints > currentPoints) {
-        alert("You do not have enough points to redeem this reward.");
-        return false;
-    }
-    return true;
+function redeemPoints(points) {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST","../controller/Loyalty_handler.php",true);
+    xhr.setRequestHeader("Content-Type","application/x-www-form-urlencoded");
+    xhr.onload = function() {
+        if(xhr.status === 200){
+            try{
+                const res = JSON.parse(xhr.responseText);
+                const msgArea = document.getElementById("messageArea");
+                if(res.success){
+                    msgArea.innerHTML = "<p class='message green'>✅ "+res.message+"</p>";
+                    document.getElementById("currentPoints").textContent = res.points;
+                    document.getElementById("currentTier").textContent = res.tier;
+                    document.getElementById("pointsNextTier").textContent = res.nextTierPoints;
+                    document.getElementById("pointsProgress").style.width = res.progress+"%";
+                }else{
+                    msgArea.innerHTML = "<p class='message red'>❌ "+res.message+"</p>";
+                }
+            }catch(e){
+                alert("Error parsing server response");
+            }
+        }else{
+            alert("Server error");
+        }
+    };
+    xhr.send("redeemPoints="+points);
 }
 </script>
 </body>

@@ -2,39 +2,7 @@
 session_start();
 require_once '../model/PickupModel.php';
 
-
 $branches = getBranches();
-
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $branchId = $_POST['branch'] ?? '';
-    $userId = $_SESSION['user_id'] ?? 1; 
-
-    if (empty($branchId)) {
-        die("Please select a branch.");
-    }
-
-    
-    $selectedBranch = array_filter($branches, fn($b) => $b['id'] == $branchId);
-    $branch = reset($selectedBranch);
-
-    if (!$branch) die("Branch not found.");
-
-   
-    if (addPickup($userId, $branch)) {
-        echo "<h2 style='color:green;'>Pickup Location Confirmed!</h2>";
-        echo "<p>Branch: ".htmlspecialchars($branch['branch_name'])."</p>";
-        echo "<p>City: ".htmlspecialchars($branch['city'])."</p>";
-        echo "<p>Hours: ".htmlspecialchars($branch['hours'])."</p>";
-        echo "<p>After Hours: ".htmlspecialchars($branch['after_hours'])."</p>";
-        echo "<p>Amenities: ".htmlspecialchars($branch['amenities'])."</p>";
-
-        echo '<br><input type="button" value="Back to services" onclick="window.location.href=\'customer_services.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-        echo ' <input type="button" value="Back to Profile" onclick="window.location.href=\'profile.php\'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">';
-        exit;
-    } else {
-        die("Failed to save pickup location.");
-    }
-}
 ?>
 
 <!DOCTYPE html>
@@ -43,12 +11,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <meta charset="UTF-8">
 <title>Pickup Locations</title>
 <link rel="stylesheet" href="../asset/designs.css">
+<style>
+    .message { font-size:14px; margin:4px 0; }
+    .green { color:green; }
+    .red { color:red; }
+    .button-container { display:flex; gap:10px; margin-top:20px; }
+    #branchDetails { margin-top:10px; }
+    #result { margin-top:20px; padding:15px; border:1px solid #ddd; border-radius:6px; }
+</style>
 </head>
 <body>
 <h1>Pickup Locations</h1>
 
 <div class="container">
-<form method="POST" action="" id="pickupForm">
+<form id="pickupForm" method="POST">
     <label>Search by Airport or City:</label>
     <input type="text" id="branchSearch" placeholder="Enter airport or city" oninput="filterBranches()" autocomplete="off"/>
     <p style="font-size:12px; color:#555; margin-top:0;">Examples: Dhaka, Rangpur, Chittagong, Cox's Bazar, Sylhet, Khulna, Naogaon, Barishal</p>
@@ -57,18 +33,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <select name="branch" id="branchDropdown" onchange="updateBranchDetails()">
         <option value="">-- Select Branch --</option>
     </select>
-    <p id="branchError" style="color:red; font-size:12px;"></p>
+    <p id="branchError" class="red message"></p>
 
-    <div id="branchDetails" style="margin-top:10px; display:none;">
+    <div id="branchDetails" style="display:none;">
         <p><strong>Hours:</strong> <span id="branchHours"></span></p>
         <p><strong>After-Hours Procedure:</strong> <span id="afterHours"></span></p>
         <p><strong>Amenities:</strong> <span id="amenities"></span></p>
     </div>
 
     <input type="submit" value="Confirm Pickup Location"/>
-    <br><br>
-    <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
-    <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'" style="background-color:#1f6feb;color:#fff;border:none;padding:10px 16px;border-radius:6px;cursor:pointer;">
+    <div class="button-container">
+        <input type="button" value="Back to services" onclick="window.location.href='customer_services.php'">
+        <input type="button" value="Back to Profile" onclick="window.location.href='profile.php'">
+    </div>
+    <p id="result"></p>
 </form>
 </div>
 
@@ -94,6 +72,7 @@ function filterBranches() {
     );
     populateBranches(filtered);
     document.getElementById("branchDetails").style.display = "none";
+    document.getElementById("branchError").textContent = "";
 }
 
 function updateBranchDetails() {
@@ -110,15 +89,59 @@ function updateBranchDetails() {
     }
 }
 
-
+// Populate initially
 populateBranches(branches);
 
-document.getElementById("pickupForm").addEventListener("submit", function(event) {
-    const branchDropdown = document.getElementById("branchDropdown");
-    if (branchDropdown.value === "") {
-        document.getElementById("branchError").textContent = "Please select a branch from the list.";
-        event.preventDefault();
+// AJAX form submission
+document.getElementById("pickupForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    const branchId = document.getElementById("branchDropdown").value;
+    const resultDiv = document.getElementById("result");
+    const branchError = document.getElementById("branchError");
+
+    branchError.textContent = '';
+    resultDiv.textContent = '';
+
+    if (!branchId) {
+        branchError.textContent = "Please select a branch from the list.";
+        return;
     }
+
+    const formData = new FormData();
+    formData.append("branch", branchId);
+
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", "../controller/Pickup_handler.php", true);
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            try {
+                const res = JSON.parse(xhr.responseText);
+                if (res.success) {
+                    const branch = res.data;
+                    resultDiv.innerHTML = `
+                        <h2 class="green">Pickup Location Confirmed!</h2>
+                        <p><strong>Branch:</strong> ${branch.branch_name}</p>
+                        <p><strong>City:</strong> ${branch.city}</p>
+                        <p><strong>Hours:</strong> ${branch.hours}</p>
+                        <p><strong>After Hours:</strong> ${branch.after_hours}</p>
+                        <p><strong>Amenities:</strong> ${branch.amenities}</p>
+                    `;
+                    document.getElementById("pickupForm").reset();
+                    document.getElementById("branchDetails").style.display = "none";
+                } else {
+                    branchError.textContent = res.message;
+                }
+            } catch(e) {
+                resultDiv.innerHTML = "<p class='red'>Server error parsing response.</p>";
+            }
+        } else {
+            resultDiv.innerHTML = "<p class='red'>Server error.</p>";
+        }
+    };
+
+    xhr.send(formData);
 });
 </script>
 </body>
